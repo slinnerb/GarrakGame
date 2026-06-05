@@ -223,26 +223,10 @@ function renderResult(c, v, browserSample, secs) {
 
       field(scene, "What the player sees here", "textarea", node.text || "", (v) => (node.text = v), 2);
 
-      if (node.choices && node.choices.length) {
-        const choicesLabel = text("div", "Choices the player can pick", "ed-label");
-        scene.appendChild(choicesLabel);
-        node.choices.forEach((ch, ci) => {
-          const row = el("div", "ed-choice");
-          row.appendChild(text("span", "▸", "ed-arrow"));
-          const input = el("input", "ed-input ed-input-inline");
-          input.type = "text";
-          input.value = ch.label || "";
-          input.placeholder = `Choice ${ci + 1}`;
-          input.addEventListener("change", () => (ch.label = input.value));
-          input.addEventListener("blur", () => (ch.label = input.value));
-          row.appendChild(input);
-          scene.appendChild(row);
-
-          if (ch.writeIn && ch.writeIn.prompt) {
-            field(scene, `▸ ${ch.label} - write-in prompt`, "text", ch.writeIn.prompt, (v) => (ch.writeIn.prompt = v));
-          }
-        });
-      }
+      // Choices section — re-renders when the teacher adds or removes a choice
+      const choicesEl = el("div", "ed-choices-wrap");
+      scene.appendChild(choicesEl);
+      renderChoices(choicesEl, node);
     });
 
     resultEl.appendChild(det);
@@ -295,6 +279,68 @@ function renderResult(c, v, browserSample, secs) {
   $("btn-save").onclick = onSave;
 
   showValidation(v);
+}
+
+// Renders (and re-renders) the choices block for a single scene node.
+// Adding or removing a choice mutates node.choices in place, then calls back
+// into this function to repaint just this scene's rows.
+function renderChoices(container, node) {
+  container.innerHTML = "";
+  if (node.choices && node.choices.length) {
+    container.appendChild(text("div", "Choices the player can pick", "ed-label"));
+    node.choices.forEach((ch, ci) => {
+      const row = el("div", "ed-choice");
+      row.appendChild(text("span", "▸", "ed-arrow"));
+      const input = el("input", "ed-input ed-input-inline");
+      input.type = "text";
+      input.value = ch.label || "";
+      input.placeholder = `Choice ${ci + 1}`;
+      input.addEventListener("change", () => (ch.label = input.value));
+      input.addEventListener("blur", () => (ch.label = input.value));
+      row.appendChild(input);
+
+      // Remove button — only shown when there's more than one choice, so the
+      // engine's "non-ending node needs at least one choice" invariant holds.
+      if (node.choices.length > 1) {
+        const rm = el("button", "ed-choice-rm");
+        rm.type = "button";
+        rm.innerHTML = "×";
+        rm.title = "Remove this choice";
+        rm.onclick = () => {
+          node.choices.splice(ci, 1);
+          renderChoices(container, node);
+        };
+        row.appendChild(rm);
+      }
+      container.appendChild(row);
+
+      if (ch.writeIn && ch.writeIn.prompt) {
+        field(container, `▸ ${ch.label || "Choice " + (ci + 1)} - write-in prompt`, "text", ch.writeIn.prompt, (v) => (ch.writeIn.prompt = v));
+      }
+    });
+  }
+
+  // + Add choice — appends a blank choice that leads to the same next node
+  // as the existing choices (preserves the campaign's graph automatically).
+  const addBtn = el("button", "ed-add-choice");
+  addBtn.type = "button";
+  addBtn.textContent = "+ Add choice";
+  addBtn.title = "Add another response for the player to pick";
+  addBtn.onclick = () => {
+    if (!node.choices) node.choices = [];
+    const proto = node.choices.find((c) => c?.onSuccess?.nextNodeId) || node.choices[0];
+    const next = proto?.onSuccess?.nextNodeId;
+    node.choices.push({
+      id: `${node.id}_c_${Math.random().toString(36).slice(2, 8)}`,
+      label: "",
+      onSuccess: { nextNodeId: next, points: 2, text: "" },
+    });
+    renderChoices(container, node);
+    // Focus the freshly added input so they can type right away
+    const inputs = container.querySelectorAll(".ed-choice .ed-input-inline");
+    inputs[inputs.length - 1]?.focus();
+  };
+  container.appendChild(addBtn);
 }
 
 // --- tiny DOM helpers (keep the editor readable) ---
