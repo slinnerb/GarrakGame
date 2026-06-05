@@ -59,11 +59,51 @@ function setStatus(msg) {
   $("gen-status").textContent = msg || "";
 }
 
+// Chip-list state for the Target Language field. Each chip is one
+// vocab/phrase/grammar point Garak wants the campaign to teach.
+const targetItems = [];
+
+function renderTargetChips() {
+  const el = $("b-target-chips");
+  if (!targetItems.length) {
+    el.innerHTML = `<span class="dim small">(no target items yet — type one and press Enter)</span>`;
+    return;
+  }
+  el.innerHTML = targetItems
+    .map(
+      (t, i) =>
+        `<span class="chip"><span class="chip-text">${esc(t)}</span><button class="chip-x" data-i="${i}" title="Remove">×</button></span>`
+    )
+    .join("");
+  el.querySelectorAll(".chip-x").forEach((b) => (b.onclick = () => {
+    targetItems.splice(parseInt(b.dataset.i, 10), 1);
+    renderTargetChips();
+  }));
+}
+
+function addTargetFromInput() {
+  const input = $("b-target-input");
+  const raw = input.value;
+  // Accept comma- or newline-separated paste; split + dedupe; trim each
+  const parts = raw.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+  let added = 0;
+  for (const p of parts) {
+    if (!targetItems.some((x) => x.toLowerCase() === p.toLowerCase())) {
+      targetItems.push(p);
+      added++;
+    }
+  }
+  input.value = "";
+  input.focus();
+  renderTargetChips();
+  return added;
+}
+
 function brief() {
   return {
     idea: $("b-idea").value.trim(),
     cefrLevel: $("b-level").value,
-    targetLanguage: $("b-target").value.trim(),
+    targetLanguage: targetItems.join(", "),
     interests: $("b-interests").value.trim(),
     length: $("b-length").value,
     l1: "Japanese (kana/kanji + romaji)",
@@ -151,6 +191,15 @@ async function onSave() {
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+$("b-target-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addTargetFromInput();
+  }
+});
+$("b-target-add").onclick = addTargetFromInput;
+renderTargetChips();
 
 $("gen-btn").onclick = onGenerate;
 $("btn-validate").onclick = onValidate;

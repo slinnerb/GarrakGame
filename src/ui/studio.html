@@ -51,9 +51,14 @@
                 </select>
               </label>
             </div>
-            <label class="fld">Target language (grammar / vocabulary)
-              <input id="b-target" type="text" placeholder="e.g. greetings, 'I would like', numbers, 'how much is...'" />
-            </label>
+            <div class="fld">
+              <label for="b-target-input">Target language (grammar / vocabulary)</label>
+              <div class="chip-input">
+                <input id="b-target-input" type="text" placeholder="Type a word or phrase, press Enter…" />
+                <button id="b-target-add" type="button" class="add-btn">+ Add</button>
+              </div>
+              <div id="b-target-chips" class="chips"></div>
+            </div>
             <label class="fld">Student interests
               <input id="b-interests" type="text" placeholder="e.g. anime, soccer, music" />
             </label>
