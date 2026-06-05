@@ -1,0 +1,49 @@
+{
+  "name": "garrak-game",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "GarrakGame - an English-teaching choose-a-path text RPG",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "selfcheck": "node scripts/selfcheck.js",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.garrak.game",
+    "productName": "GarrakGame",
+    "files": [
+      "src/**/*",
+      "campaigns/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "REPLACE_WITH_GITHUB_OWNER",
+        "repo": "REPLACE_WITH_REPO"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  }
+}

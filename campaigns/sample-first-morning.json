@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "1.0",
+  "id": "first-morning",
+  "title": "First Morning in a New City",
+  "cefrLevel": "A1",
+  "estimatedMinutes": 25,
+  "author": "hand-authored sample",
+  "studentProfile": { "name": "", "interests": [] },
+  "premise": "You just arrived by train in a city where everyone speaks English. It is early morning. Find a coffee, then find the museum.",
+  "defaultDifficulty": "adventurer",
+  "loadoutSize": 3,
+  "startNodeId": "n_arrive",
+  "_note_l1": "l1Hint values are Japanese (Garak teaches mostly Japanese students); the L1 is configurable per student/campaign.",
+  "sections": [
+    {
+      "id": "s1",
+      "title": "Arrival",
+      "targetLanguageBank": [
+        { "text": "hello", "type": "phrase", "l1Hint": "こんにちは (konnichiwa)" },
+        { "text": "please", "type": "phrase", "l1Hint": "お願いします (onegai shimasu)" },
+        { "text": "thank you", "type": "phrase", "l1Hint": "ありがとうございます (arigatou gozaimasu)" },
+        { "text": "I would like", "type": "phrase", "l1Hint": "〜がほしいです (~ga hoshii desu)" },
+        { "text": "coffee", "type": "vocab", "l1Hint": "コーヒー (koohii)" },
+        { "text": "excuse me", "type": "phrase", "l1Hint": "すみません (sumimasen)" },
+        { "text": "map", "type": "vocab", "l1Hint": "地図 (chizu)" }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Finding the Way",
+      "targetLanguageBank": [
+        { "text": "excuse me", "type": "phrase", "l1Hint": "すみません (sumimasen)" },
+        { "text": "where is", "type": "phrase", "l1Hint": "〜はどこですか (~wa doko desu ka)" },
+        { "text": "museum", "type": "vocab", "l1Hint": "博物館 (hakubutsukan)" },
+        { "text": "left", "type": "vocab", "l1Hint": "左 (hidari)" },
+        { "text": "right", "type": "vocab", "l1Hint": "右 (migi)" },
+        { "text": "I'm sorry", "type": "phrase", "l1Hint": "ごめんなさい (gomen nasai)" },
+        { "text": "I didn't know", "type": "phrase", "l1Hint": "知りませんでした (shirimasen deshita)" }
+      ]
+    }
+  ],
+  "spellPool": [
+    {
+      "id": "sp_jail",
+      "name": "Get Out of Jail Free",
+      "icon": "[JAIL]",
+      "flavor": "Talk your way out of trouble - once.",
+      "baseEffect": { "type": "cancelConsequence", "text": "Escape the current consequence safely." },
+      "upgradeBeat": {
+        "writePrompt": "Apologize politely and explain that you are a tourist.",
+        "upgradedEffectText": "You walk free AND keep your photos."
+      }
+    },
+    {
+      "id": "sp_foresight",
+      "name": "Foresight",
+      "icon": "[EYE]",
+      "flavor": "Glimpse how hard a task is before you try it.",
+      "baseEffect": { "type": "revealDC", "text": "Reveal the difficulty before you roll." }
+    },
+    {
+      "id": "sp_charm",
+      "name": "Silver Tongue",
+      "icon": "[TALK]",
+      "flavor": "Charm your way past one social check.",
+      "baseEffect": { "type": "autoPassCheck", "text": "Automatically pass the current check." }
+    }
+  ],
+  "nodes": {
+    "n_arrive": {
+      "id": "n_arrive",
+      "sectionId": "s1",
+      "text": "You step off the train into a bright, busy square. You are tired and you want a coffee.",
+      "ascii": "  ___\n |[ ]|  ~ welcome to the city ~\n |___|",
+      "choices": [
+        {
+          "id": "c_coffee",
+          "label": "Walk to the little coffee stand",
+          "writeIn": {
+            "prompt": "Greet the seller and order a coffee in English.",
+            "rubricHint": "Try a greeting + 'I would like' + 'please'.",
+            "expectedTargets": 3
+          },
+          "skillCheck": { "baseDC": 9, "attribute": "social" },
+          "onSuccess": { "text": "The seller smiles and hands you a warm cup.", "nextNodeId": "n_square", "points": 5 },
+          "onFailure": { "text": "You fumble the words, but she guesses and gives you a coffee anyway.", "nextNodeId": "n_square", "points": 0 }
+        },
+        {
+          "id": "c_map",
+          "label": "Quietly study your paper map",
+          "onSuccess": { "text": "You get your bearings and head for the main square.", "nextNodeId": "n_square", "points": 2 }
+        }
+      ]
+    },
+    "n_square": {
+      "id": "n_square",
+      "sectionId": "s1",
+      "text": "In the main square, an old stone building glows in the morning light. You want to visit the museum.",
+      "clue": null,
+      "choices": [
+        {
+          "id": "c_ask",
+          "label": "Ask a passer-by for directions to the museum",
+          "writeIn": {
+            "prompt": "Politely ask where the museum is.",
+            "rubricHint": "Try 'Excuse me' + 'where is' + 'please'.",
+            "expectedTargets": 2
+          },
+          "skillCheck": { "baseDC": 10, "attribute": "social" },
+          "onSuccess": { "text": "'The museum? Go left, then right,' they say with a smile.", "nextNodeId": "n_street", "points": 5 },
+          "onFailure": { "text": "They shrug and hurry off, pointing vaguely to the left.", "nextNodeId": "n_street", "points": 0 }
+        },
+        {
+          "id": "c_photo",
+          "label": "Take photos of the beautiful old building",
+          "hiddenTrap": {
+            "clue": "A small unmarked door has a little black camera blinking above it.",
+            "consequenceNodeId": "n_police"
+          }
+        }
+      ]
+    },
+    "n_police": {
+      "id": "n_police",
+      "sectionId": "s2",
+      "isConsequence": true,
+      "escapeNodeId": "n_release_free",
+      "text": "Two officers step out fast. 'No photos here! Delete them and come with us.'",
+      "choices": [
+        {
+          "id": "c_apologize",
+          "label": "Apologize and explain you didn't know",
+          "writeIn": {
+            "prompt": "Apologize and explain you are a tourist who didn't know the rule.",
+            "rubricHint": "Try \"I'm sorry\" + \"I didn't know\".",
+            "expectedTargets": 2
+          },
+          "skillCheck": { "baseDC": 14, "attribute": "social" },
+          "onSuccess": { "text": "They soften. 'Okay - delete the photos and go.'", "nextNodeId": "n_release", "points": 5 },
+          "onFailure": { "text": "They are not convinced and walk you to the station for an hour.", "nextNodeId": "n_detained", "points": 0 }
+        }
+      ]
+    },
+    "n_release": {
+      "id": "n_release",
+      "sectionId": "s2",
+      "text": "You delete the photos and walk away, heart pounding.",
+      "choices": [
+        { "id": "c_go", "label": "Head to the museum street", "onSuccess": { "nextNodeId": "n_street", "points": 0 } }
+      ]
+    },
+    "n_release_free": {
+      "id": "n_release_free",
+      "sectionId": "s2",
+      "text": "You say exactly the right words. The officers nod, almost friendly, and wave you on - photos and all.",
+      "choices": [
+        { "id": "c_go2", "label": "Head to the museum street", "onSuccess": { "nextNodeId": "n_street", "points": 0 } }
+      ]
+    },
+    "n_detained": {
+      "id": "n_detained",
+      "sectionId": "s2",
+      "text": "An hour later you are free again, a little shaken but fine.",
+      "choices": [
+        { "id": "c_go3", "label": "Head to the museum street", "onSuccess": { "nextNodeId": "n_street", "points": 0 } }
+      ]
+    },
+    "n_street": {
+      "id": "n_street",
+      "sectionId": "s2",
+      "text": "You turn left, then right, and there it is: the museum, doors open.",
+      "choices": [
+        { "id": "c_finish", "label": "Step inside the museum", "onSuccess": { "text": "You did it.", "nextNodeId": "n_end", "points": 5 } }
+      ]
+    },
+    "n_end": {
+      "id": "n_end",
+      "sectionId": "s2",
+      "isEnding": true,
+      "endingSummary": "You made it through your first morning in the city - coffee in hand and the museum found!",
+      "text": "Warm light spills across the museum lobby. Your first morning is a success."
+    }
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+build/
+smoke.png
+*.local
+secret.local.txt
+.secrets/
+.env
+.DS_Store
+Thumbs.db

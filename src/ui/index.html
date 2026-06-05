@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GarrakGame</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <div class="title">GARRAK<span class="dim">::</span>GAME</div>
+        <div id="hud" class="hud"></div>
+      </header>
+
+      <main id="main">
+        <aside id="left">
+          <div id="bank" class="panel"></div>
+          <div id="spellbook" class="panel"></div>
+        </aside>
+
+        <section id="center">
+          <pre id="ascii" class="ascii"></pre>
+          <div id="scene" class="scene"></div>
+          <div id="clue" class="clue"></div>
+          <div id="interaction" class="interaction"></div>
+          <div id="feedback" class="feedback"></div>
+        </section>
+      </main>
+
+      <footer id="bottombar">
+        <label>Difficulty:
+          <select id="difficulty">
+            <option value="story">Story</option>
+            <option value="adventurer" selected>Adventurer</option>
+            <option value="challenge">Challenge</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="hints" checked /> L1 hints</label>
+        <button id="restart">Restart</button>
+        <div class="spacer"></div>
+        <div id="status" class="dim"></div>
+      </footer>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
