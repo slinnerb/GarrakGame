@@ -136,7 +136,7 @@ async function onGenerate() {
     return;
   }
   $("gen-btn").disabled = true;
-  setStatus(inElectron ? "Generating with qwen2.5:7b … this can take ~1-2 minutes." : "Loading sample…");
+  setStatus("Generating with qwen2.5:7b … this can take ~1-2 minutes.");
   try {
     const t0 = performance.now();
     const { campaign, validation, browserSample } = await generateCampaign(brief());
@@ -149,62 +149,241 @@ async function onGenerate() {
   }
 }
 
+// Current campaign being edited - the source of truth. Editor inputs mutate
+// this object directly via onChange handlers; Save / Play-test / Validate all
+// read from here. No more parsing user-edited JSON.
+let currentCampaign = null;
+
 function renderResult(c, v, browserSample, secs) {
-  $("result").style.display = "block";
-  const outline = (c.sections || [])
-    .map((s) => {
-      const words = s.targetLanguageBank.map((t) => t.text).join(", ");
-      return `<li><b>${esc(s.title)}</b> <span class="dim">— ${s.targetLanguageBank.length} words: ${esc(words)}</span></li>`;
-    })
-    .join("");
+  currentCampaign = c;
+  const resultEl = $("result");
+  resultEl.style.display = "block";
+  resultEl.innerHTML = ""; // wipe; we rebuild as DOM
+
   const nodeCount = Object.keys(c.nodes || {}).length;
-  $("result-head").innerHTML =
-    `<h3>${esc(c.title)} <span class="dim small">[${esc(c.cefrLevel)}]</span></h3>
-     <div class="dim small">${browserSample ? "browser sample" : "generated in " + secs + "s"} · ${nodeCount} nodes · spells: ${(c.spellPool || []).map((s) => esc(s.name)).join(", ") || "none"}</div>
-     <ul class="outline">${outline}</ul>`;
-  $("json-edit").value = JSON.stringify(c, null, 2);
+
+  // ----- HEAD -----
+  const head = el("div", "ed-head");
+  head.appendChild(text("h3", `${c.title || "Untitled"}`, "ed-title-text amber"));
+  head.appendChild(text("div", `${browserSample ? "browser sample" : "generated in " + secs + "s"} · ${esc(c.cefrLevel || "?")} · ${nodeCount} nodes · ${(c.spellPool || []).length} spells`, "dim small"));
+  resultEl.appendChild(head);
+
+  // ----- TITLE + PREMISE -----
+  const titleHeading = head.querySelector(".ed-title-text");
+  field(resultEl, "Campaign title", "text", c.title || "", (v) => {
+    c.title = v;
+    if (titleHeading) titleHeading.textContent = v;
+  });
+  field(resultEl, "Premise (the opening situation)", "textarea", c.premise || "", (v) => (c.premise = v), 3);
+
+  // ----- SECTIONS -----
+  resultEl.appendChild(text("h4", "Sections", "ed-h"));
+  (c.sections || []).forEach((sec, si) => {
+    const det = el("details", "ed-section");
+    det.open = true;
+    const summary = el("summary");
+    const sumLabel = el("span", "amber");
+    sumLabel.textContent = sec.title || `Section ${si + 1}`;
+    summary.appendChild(document.createTextNode(`Section ${si + 1}: `));
+    summary.appendChild(sumLabel);
+    det.appendChild(summary);
+
+    const body = el("div", "ed-section-body");
+    det.appendChild(body);
+
+    field(body, "Section title", "text", sec.title || "", (v) => {
+      sec.title = v;
+      sumLabel.textContent = v;
+    });
+
+    const bankInitial = (sec.targetLanguageBank || []).map((b) => b.text).join("\n");
+    field(
+      body,
+      "Target language for this section (one word or phrase per line)",
+      "textarea",
+      bankInitial,
+      (v) => {
+        const lines = v.split("\n").map((s) => s.trim()).filter(Boolean);
+        // Preserve existing l1Hint / type when text matches; otherwise default.
+        const oldByText = new Map((sec.targetLanguageBank || []).map((b) => [b.text.toLowerCase(), b]));
+        sec.targetLanguageBank = lines.map((t) => {
+          const prev = oldByText.get(t.toLowerCase());
+          return prev ? { ...prev, text: t } : { text: t, type: "vocab", l1Hint: null };
+        });
+      },
+      Math.max(3, (sec.targetLanguageBank || []).length + 1)
+    );
+
+    // Scenes in this section (skip ending + consequence nodes — internal)
+    const sceneNodes = Object.values(c.nodes || {}).filter((n) => n.sectionId === sec.id && !n.isEnding && !n.isConsequence);
+    sceneNodes.forEach((node, ni) => {
+      const scene = el("div", "ed-scene");
+      scene.appendChild(text("div", `Scene ${ni + 1}`, "ed-scene-label"));
+      body.appendChild(scene);
+
+      field(scene, "What the player sees here", "textarea", node.text || "", (v) => (node.text = v), 2);
+
+      if (node.choices && node.choices.length) {
+        const choicesLabel = text("div", "Choices the player can pick", "ed-label");
+        scene.appendChild(choicesLabel);
+        node.choices.forEach((ch, ci) => {
+          const row = el("div", "ed-choice");
+          row.appendChild(text("span", "▸", "ed-arrow"));
+          const input = el("input", "ed-input ed-input-inline");
+          input.type = "text";
+          input.value = ch.label || "";
+          input.placeholder = `Choice ${ci + 1}`;
+          input.addEventListener("change", () => (ch.label = input.value));
+          input.addEventListener("blur", () => (ch.label = input.value));
+          row.appendChild(input);
+          scene.appendChild(row);
+
+          if (ch.writeIn && ch.writeIn.prompt) {
+            field(scene, `▸ ${ch.label} - write-in prompt`, "text", ch.writeIn.prompt, (v) => (ch.writeIn.prompt = v));
+          }
+        });
+      }
+    });
+
+    resultEl.appendChild(det);
+  });
+
+  // ----- SPELLS -----
+  if (c.spellPool && c.spellPool.length) {
+    resultEl.appendChild(text("h4", "Spells the student starts with", "ed-h"));
+    c.spellPool.forEach((sp, si) => {
+      const wrap = el("div", "ed-spell");
+      wrap.appendChild(text("div", `Spell ${si + 1}`, "ed-scene-label"));
+      field(wrap, "Name", "text", sp.name || "", (v) => (sp.name = v));
+      field(wrap, "Flavor (one-line description)", "text", sp.flavor || "", (v) => (sp.flavor = v));
+      resultEl.appendChild(wrap);
+    });
+  }
+
+  // ----- ACTION BUTTONS -----
+  const actions = el("div", "row ed-actions");
+  actions.innerHTML = `
+    <button id="btn-validate">Validate</button>
+    <button id="btn-playtest">▶ Play-test</button>
+    <button id="btn-save" class="primary save-btn">💾 Save to library</button>
+  `;
+  resultEl.appendChild(actions);
+
+  const validation = el("div");
+  validation.id = "validation";
+  validation.className = "validation";
+  resultEl.appendChild(validation);
+
+  // Save-success banner (lives below the buttons; we update text + class in onSave)
+  const banner = el("div");
+  banner.id = "save-banner";
+  banner.className = "save-banner";
+  resultEl.appendChild(banner);
+
+  // ----- ADVANCED: read-only JSON view -----
+  const adv = el("details", "ed-advanced");
+  adv.innerHTML = `<summary>⚙ Show raw JSON (advanced, read-only)</summary><pre class="json-readonly"></pre>`;
+  resultEl.appendChild(adv);
+  const jsonPre = adv.querySelector("pre");
+  const updateJson = () => (jsonPre.textContent = JSON.stringify(c, null, 2));
+  updateJson();
+  resultEl.querySelectorAll("input, textarea").forEach((inp) => inp.addEventListener("input", updateJson));
+
+  // Wire actions
+  $("btn-validate").onclick = onValidate;
+  $("btn-playtest").onclick = onPlaytest;
+  $("btn-save").onclick = onSave;
+
   showValidation(v);
 }
 
+// --- tiny DOM helpers (keep the editor readable) ---
+function el(tag, cls) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  return e;
+}
+function text(tag, content, cls) {
+  const e = el(tag, cls);
+  e.textContent = content;
+  return e;
+}
+function field(parent, labelText, type, value, onChange, rows = 1) {
+  const wrap = el("div", "ed-field");
+  const lbl = text("label", labelText, "ed-label");
+  wrap.appendChild(lbl);
+  let input;
+  if (type === "textarea") {
+    input = el("textarea", "ed-input");
+    input.rows = rows;
+  } else {
+    input = el("input", "ed-input");
+    input.type = "text";
+  }
+  input.value = value;
+  input.addEventListener("change", () => onChange(input.value));
+  input.addEventListener("blur", () => onChange(input.value));
+  wrap.appendChild(input);
+  parent.appendChild(wrap);
+  return input;
+}
+
 function showValidation(v) {
-  $("validation").innerHTML = v.ok
+  const el = document.getElementById("validation");
+  if (!el) return;
+  el.innerHTML = v.ok
     ? `<span class="ok">✓ valid campaign</span>`
     : `<span class="bad">✗ ${v.errors.length} issue(s):</span><ul>${v.errors.map((e) => `<li>${esc(e)}</li>`).join("")}</ul>`;
 }
 
-function parseEdited() {
-  try {
-    return JSON.parse($("json-edit").value);
-  } catch (e) {
-    $("validation").innerHTML = `<span class="bad">✗ JSON parse error: ${esc(e.message)}</span>`;
-    return null;
-  }
+function flashBanner(text, kind) {
+  const b = document.getElementById("save-banner");
+  if (!b) return;
+  b.className = "save-banner show " + (kind || "");
+  b.textContent = text;
+  // Auto-fade after a moment for success; sticky for errors
+  if (kind === "ok") setTimeout(() => (b.className = "save-banner"), 4000);
 }
 
 function onValidate() {
-  const c = parseEdited();
-  if (c) showValidation(validateCampaign(c));
+  if (!currentCampaign) return;
+  showValidation(validateCampaign(currentCampaign));
 }
 
 function onPlaytest() {
-  const c = parseEdited();
-  if (!c) return;
-  const v = validateCampaign(c);
+  if (!currentCampaign) return;
+  const v = validateCampaign(currentCampaign);
   if (!v.ok) return showValidation(v);
-  sessionStorage.setItem("garrak.playtest", JSON.stringify(c));
+  sessionStorage.setItem("garrak.playtest", JSON.stringify(currentCampaign));
   window.location.href = "./index.html";
 }
 
 async function onSave() {
-  const c = parseEdited();
-  if (!c) return;
-  const v = validateCampaign(c);
-  if (!v.ok) return showValidation(v);
+  if (!currentCampaign) return;
+  const v = validateCampaign(currentCampaign);
+  if (!v.ok) {
+    showValidation(v);
+    flashBanner("Can't save — fix the validation issues first.", "bad");
+    return;
+  }
+  const btn = $("btn-save");
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "Saving…";
   try {
-    const r = await saveCampaign(c);
-    setStatus("Saved: " + (r.file || r.id));
+    const r = await saveCampaign(currentCampaign);
+    btn.innerHTML = "✓ Saved!";
+    btn.classList.add("saved");
+    flashBanner(`✓ Saved to your library as "${currentCampaign.title}". Find it later under Load Campaign.`, "ok");
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.classList.remove("saved");
+      btn.disabled = false;
+    }, 2500);
   } catch (e) {
-    setStatus("✗ save failed: " + e.message);
+    btn.innerHTML = original;
+    btn.disabled = false;
+    flashBanner("✗ Save failed: " + e.message, "bad");
   }
 }
 
