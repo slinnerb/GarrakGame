@@ -63,6 +63,29 @@ export async function installUpdate() {
   if (g && g.installUpdate) return g.installUpdate();
 }
 
+// Per-campaign save state (resume where you left off).
+export async function getSaveState(campaignId) {
+  if (g && g.getSaveState) return g.getSaveState(campaignId);
+  try {
+    const raw = localStorage.getItem("garrak.save." + campaignId);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+export async function setSaveState(campaignId, state) {
+  if (g && g.setSaveState) return g.setSaveState({ campaignId, state });
+  try {
+    localStorage.setItem("garrak.save." + campaignId, JSON.stringify(state));
+  } catch {}
+}
+export async function clearSaveState(campaignId) {
+  if (g && g.clearSaveState) return g.clearSaveState(campaignId);
+  try {
+    localStorage.removeItem("garrak.save." + campaignId);
+  } catch {}
+}
+
 export async function gradeAnswer(text, bank, opts) {
   if (g && g.gradeAnswer) return g.gradeAnswer({ text, bank, opts });
   const res = await fetch("/api/grade", {

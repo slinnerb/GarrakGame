@@ -195,6 +195,57 @@ export function pickAnother(s) {
 // anytime (handy for "preview" mid-session too). Aggregates everything the
 // transcript already records: target words used vs missed, write-in quality,
 // mistakes to review, roll history, and a per-section breakdown.
+// Snapshot enough state to rebuild this session later. The campaign itself
+// is NOT included — saves are tied to a campaign id and the campaign file is
+// loaded separately from disk. Transcripts can grow but stay small for one
+// 25-min session, so we serialize the whole thing for an accurate recap.
+export function serializeSession(s) {
+  return {
+    schema: 1,
+    campaignId: s.campaign.id,
+    savedAt: new Date().toISOString(),
+    difficulty: s.difficulty,
+    hintsOn: s.hintsOn,
+    nodeId: s.nodeId,
+    phase: s.phase,
+    points: s.points,
+    progressPct: s.progressPct,
+    inspiration: s.inspiration,
+    spells: s.spells.map((sp) => ({ id: sp.id, used: !!sp.used })),
+    pendingChoiceId: s.pendingChoiceId,
+    pendingBonus: s.pendingBonus,
+    transcript: s.transcript,
+  };
+}
+
+// Rebuild a session from a saved snapshot. Throws if the saved node no longer
+// exists in the campaign (campaign was edited and the node was removed),
+// letting the renderer decide how to recover.
+export function restoreSession(campaign, saved, opts = {}) {
+  if (!saved || saved.campaignId !== campaign.id) throw new Error("save is for a different campaign");
+  if (!campaign.nodes || !campaign.nodes[saved.nodeId]) throw new Error(`saved node "${saved.nodeId}" no longer exists in this campaign`);
+  const loadoutIds = (saved.spells || []).map((sp) => sp.id);
+  const s = createSession(campaign, {
+    ...opts,
+    difficulty: saved.difficulty || opts.difficulty,
+    hintsOn: typeof saved.hintsOn === "boolean" ? saved.hintsOn : !!opts.hintsOn,
+    loadout: loadoutIds.length ? loadoutIds : opts.loadout,
+  });
+  s.nodeId = saved.nodeId;
+  s.phase = saved.phase || PHASES.SCENE;
+  s.points = Number(saved.points) || 0;
+  s.progressPct = Number(saved.progressPct) || 0;
+  s.inspiration = Number(saved.inspiration) || 0;
+  for (const sp of saved.spells || []) {
+    const match = s.spells.find((x) => x.id === sp.id);
+    if (match) match.used = !!sp.used;
+  }
+  s.pendingChoiceId = saved.pendingChoiceId || null;
+  s.pendingBonus = Number(saved.pendingBonus) || 0;
+  s.transcript = Array.isArray(saved.transcript) ? saved.transcript : [];
+  return s;
+}
+
 export function recap(s) {
   const writeIns = s.transcript.filter((t) => t.type === "writeIn" || t.type === "spellWriteIn");
   const allBank = (s.campaign.sections || []).flatMap((sec) => sec.targetLanguageBank.map((b) => ({ ...b, sectionId: sec.id })));

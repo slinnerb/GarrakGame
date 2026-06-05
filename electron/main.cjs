@@ -12,7 +12,16 @@ const isDev = !app.isPackaged;
 const APP_ROOT = isDev ? path.join(__dirname, "..") : app.getAppPath();
 const USER_DIR = app.getPath("userData");
 const CAMPAIGNS_DIR = path.join(USER_DIR, "campaigns");
+const SAVES_DIR = path.join(USER_DIR, "saves");
 const SETTINGS_FILE = path.join(USER_DIR, "settings.json");
+
+function sanitizeId(id) {
+  // Strip path-traversal and unusual chars so the campaign id can't escape SAVES_DIR.
+  return String(id || "").replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120);
+}
+function saveFileFor(campaignId) {
+  return path.join(SAVES_DIR, sanitizeId(campaignId) + ".json");
+}
 
 const MIME = {
   ".html": "text/html",
@@ -34,6 +43,7 @@ function resolveAppFile(urlPath) {
 
 async function seedCampaigns() {
   await fsp.mkdir(CAMPAIGNS_DIR, { recursive: true });
+  await fsp.mkdir(SAVES_DIR, { recursive: true });
   const existing = (await fsp.readdir(CAMPAIGNS_DIR)).filter((f) => f.endsWith(".json"));
   if (existing.length === 0) {
     const seed = path.join(APP_ROOT, "campaigns", "sample-first-morning.json");
@@ -121,6 +131,26 @@ function registerIpc() {
     const ai = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "ai.js")).href);
     const client = ai.makeClient({ baseUrl, model, password });
     return ai.aiGrade(client, text, bank, opts);
+  });
+
+  // Per-campaign save state (resume mid-session).
+  ipcMain.handle("save:get", async (_e, campaignId) => {
+    try {
+      return JSON.parse(await fsp.readFile(saveFileFor(campaignId), "utf8"));
+    } catch {
+      return null;
+    }
+  });
+  ipcMain.handle("save:set", async (_e, { campaignId, state }) => {
+    await fsp.mkdir(SAVES_DIR, { recursive: true });
+    await fsp.writeFile(saveFileFor(campaignId), JSON.stringify(state), "utf8");
+    return true;
+  });
+  ipcMain.handle("save:clear", async (_e, campaignId) => {
+    try {
+      await fsp.unlink(saveFileFor(campaignId));
+    } catch {}
+    return true;
   });
 
   ipcMain.handle("updater:check", async () => {

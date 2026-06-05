@@ -12,8 +12,10 @@ import {
   castSpell,
   PHASES,
   recap,
+  serializeSession,
+  restoreSession,
 } from "../core/engine.js";
-import { loadDefaultCampaign, getBuildInfo, gradeAnswer } from "./platform.js";
+import { loadDefaultCampaign, getBuildInfo, gradeAnswer, getSaveState, setSaveState, clearSaveState } from "./platform.js";
 import { stubGrade } from "../core/grader.js";
 
 // Real AI grader with automatic fallback to the stub if the model is
@@ -54,6 +56,22 @@ async function boot() {
     } catch {}
   }
   campaign = await loadDefaultCampaign();
+  // Try to resume from save (per-campaign). If the save points at a node
+  // that no longer exists (campaign was edited), fall back to a fresh start.
+  const saved = await getSaveState(campaign.id);
+  if (saved && saved.phase !== "ended" && saved.nodeId) {
+    try {
+      session = restoreSession(campaign, saved, { grade: smartGrader, rng: Math.random });
+      const when = saved.savedAt ? saved.savedAt.slice(0, 16).replace("T", " ") : "earlier";
+      setStatus(`▶ Resumed from ${when}`);
+      setTimeout(() => setStatus(""), 4500);
+      render();
+      return;
+    } catch (e) {
+      console.warn("could not resume saved state:", e.message);
+      await clearSaveState(campaign.id);
+    }
+  }
   newSession();
 }
 
@@ -68,6 +86,21 @@ function newSession() {
   render();
 }
 
+// Persist the session after every meaningful change. End-of-campaign clears
+// the save so the next launch boots into the start screen for that campaign.
+async function persist() {
+  if (!session || !campaign) return;
+  try {
+    if (session.phase === PHASES.ENDED) {
+      await clearSaveState(campaign.id);
+    } else {
+      await setSaveState(campaign.id, serializeSession(session));
+    }
+  } catch (e) {
+    console.warn("save failed:", e.message);
+  }
+}
+
 let busy = false;
 async function act(fn) {
   busy = true;
@@ -80,6 +113,7 @@ async function act(fn) {
     setStatus("! " + e.message);
   } finally {
     busy = false;
+    await persist();
     render();
   }
 }
@@ -277,8 +311,28 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-$("difficulty").onchange = newSession;
-$("hints").onchange = newSession;
-$("restart").onclick = newSession;
+// Difficulty/hints toggle preserves the active session (so the student doesn't
+// lose progress when they tweak settings mid-campaign) and persists the change.
+$("difficulty").onchange = async () => {
+  if (session) {
+    session.difficulty = $("difficulty").value;
+    await persist();
+    render();
+  } else newSession();
+};
+$("hints").onchange = async () => {
+  if (session) {
+    session.hintsOn = $("hints").checked;
+    await persist();
+    render();
+  } else newSession();
+};
+// Restart is explicit — confirm if there's real progress, then wipe the save.
+$("restart").onclick = async () => {
+  const hasProgress = session && session.phase !== PHASES.ENDED && (session.points > 0 || session.transcript.length > 1);
+  if (hasProgress && !confirm("Restart this campaign? You'll lose your current progress.")) return;
+  if (campaign) await clearSaveState(campaign.id);
+  newSession();
+};
 
 boot();

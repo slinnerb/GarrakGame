@@ -14,4 +14,7 @@ contextBridge.exposeInMainWorld("garrak", {
   gradeAnswer: (payload) => ipcRenderer.invoke("ai:grade", payload),
   checkForUpdates: () => ipcRenderer.invoke("updater:check"),
   installUpdate: () => ipcRenderer.invoke("updater:install"),
+  getSaveState: (campaignId) => ipcRenderer.invoke("save:get", campaignId),
+  setSaveState: (payload) => ipcRenderer.invoke("save:set", payload),
+  clearSaveState: (campaignId) => ipcRenderer.invoke("save:clear", campaignId),
 });
