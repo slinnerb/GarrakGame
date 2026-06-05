@@ -59,9 +59,14 @@
               </div>
               <div id="b-target-chips" class="chips"></div>
             </div>
-            <label class="fld">Student interests
-              <input id="b-interests" type="text" placeholder="e.g. anime, soccer, music" />
-            </label>
+            <div class="fld">
+              <label for="b-interests-input">Student interests</label>
+              <div class="chip-input">
+                <input id="b-interests-input" type="text" placeholder="Type an interest, press Enter…" />
+                <button id="b-interests-add" type="button" class="add-btn">+ Add</button>
+              </div>
+              <div id="b-interests-chips" class="chips"></div>
+            </div>
             <button id="gen-btn" class="primary">✦ Generate campaign</button>
             <div id="gen-status" class="dim"></div>
           </div>

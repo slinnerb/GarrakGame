@@ -59,52 +59,72 @@ function setStatus(msg) {
   $("gen-status").textContent = msg || "";
 }
 
-// Chip-list state for the Target Language field. Each chip is one
-// vocab/phrase/grammar point Garak wants the campaign to teach.
-const targetItems = [];
+// Reusable chip-list field. Used for both Target Language and Student Interests.
+// Returns the (mutable) items array so callers can read it later for brief().
+function createChipField(inputId, addBtnId, chipsId, emptyMsg) {
+  const items = [];
+  const inputEl = $(inputId);
+  const chipsEl = $(chipsId);
+  const addBtnEl = $(addBtnId);
 
-function renderTargetChips() {
-  const el = $("b-target-chips");
-  if (!targetItems.length) {
-    el.innerHTML = `<span class="dim small">(no target items yet — type one and press Enter)</span>`;
-    return;
-  }
-  el.innerHTML = targetItems
-    .map(
-      (t, i) =>
-        `<span class="chip"><span class="chip-text">${esc(t)}</span><button class="chip-x" data-i="${i}" title="Remove">×</button></span>`
-    )
-    .join("");
-  el.querySelectorAll(".chip-x").forEach((b) => (b.onclick = () => {
-    targetItems.splice(parseInt(b.dataset.i, 10), 1);
-    renderTargetChips();
-  }));
-}
-
-function addTargetFromInput() {
-  const input = $("b-target-input");
-  const raw = input.value;
-  // Accept comma- or newline-separated paste; split + dedupe; trim each
-  const parts = raw.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
-  let added = 0;
-  for (const p of parts) {
-    if (!targetItems.some((x) => x.toLowerCase() === p.toLowerCase())) {
-      targetItems.push(p);
-      added++;
+  function render() {
+    if (!items.length) {
+      chipsEl.innerHTML = `<span class="dim small">${esc(emptyMsg)}</span>`;
+      return;
     }
+    chipsEl.innerHTML = items
+      .map(
+        (t, i) =>
+          `<span class="chip"><span class="chip-text">${esc(t)}</span><button class="chip-x" data-i="${i}" title="Remove">×</button></span>`
+      )
+      .join("");
+    chipsEl.querySelectorAll(".chip-x").forEach((b) => (b.onclick = () => {
+      items.splice(parseInt(b.dataset.i, 10), 1);
+      render();
+    }));
   }
-  input.value = "";
-  input.focus();
-  renderTargetChips();
-  return added;
+
+  function addFromInput() {
+    // Accept comma/newline-separated paste; trim + dedupe (case-insensitive)
+    const parts = inputEl.value.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+    for (const p of parts) {
+      if (!items.some((x) => x.toLowerCase() === p.toLowerCase())) items.push(p);
+    }
+    inputEl.value = "";
+    inputEl.focus();
+    render();
+  }
+
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addFromInput();
+    }
+  });
+  addBtnEl.onclick = addFromInput;
+  render();
+  return items;
 }
+
+const targetItems = createChipField(
+  "b-target-input",
+  "b-target-add",
+  "b-target-chips",
+  "(no target items yet — type one and press Enter)"
+);
+const interestItems = createChipField(
+  "b-interests-input",
+  "b-interests-add",
+  "b-interests-chips",
+  "(no interests yet — type one and press Enter)"
+);
 
 function brief() {
   return {
     idea: $("b-idea").value.trim(),
     cefrLevel: $("b-level").value,
     targetLanguage: targetItems.join(", "),
-    interests: $("b-interests").value.trim(),
+    interests: interestItems.join(", "),
     length: $("b-length").value,
     l1: "Japanese (kana/kanji + romaji)",
   };
@@ -192,14 +212,6 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-$("b-target-input").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    addTargetFromInput();
-  }
-});
-$("b-target-add").onclick = addTargetFromInput;
-renderTargetChips();
 
 $("gen-btn").onclick = onGenerate;
 $("btn-validate").onclick = onValidate;
