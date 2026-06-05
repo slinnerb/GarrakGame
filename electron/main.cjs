@@ -206,22 +206,32 @@ function createWindow() {
   return win;
 }
 
-// Updater state — surfaced to the renderer through IPC so the UI can show
-// "checking / up-to-date / downloading / ready to install" without polling.
-let updaterState = { status: "idle", version: null, message: null, downloaded: false };
+// Updater state - surfaced to renderer via IPC AND pushed via webContents.send
+// when it changes, so the UI can show a live progress bar without polling.
+let updaterState = { status: "idle", version: null, message: null, downloaded: false, percent: 0, transferred: 0, total: 0 };
 let updaterModule = null;
+
+function broadcastUpdaterState() {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (win.webContents && !win.webContents.isDestroyed()) win.webContents.send("updater:state", updaterState);
+  }
+}
+function setState(patch) {
+  updaterState = { ...updaterState, ...patch };
+  broadcastUpdaterState();
+}
 
 function setupUpdater() {
   if (updaterModule) return updaterModule;
   try {
     const { autoUpdater } = require("electron-updater");
     autoUpdater.autoDownload = true;
-    autoUpdater.on("checking-for-update", () => (updaterState = { ...updaterState, status: "checking", message: "Checking for updates…" }));
-    autoUpdater.on("update-available", (info) => (updaterState = { status: "downloading", version: info?.version, message: `Update v${info?.version} available — downloading…`, downloaded: false }));
-    autoUpdater.on("update-not-available", (info) => (updaterState = { status: "current", version: info?.version || app.getVersion(), message: "You're up to date.", downloaded: false }));
-    autoUpdater.on("download-progress", (p) => (updaterState = { ...updaterState, status: "downloading", message: `Downloading… ${Math.round(p.percent)}%` }));
-    autoUpdater.on("update-downloaded", (info) => (updaterState = { status: "ready", version: info?.version, message: `Update v${info?.version} ready — restart to install.`, downloaded: true }));
-    autoUpdater.on("error", (e) => (updaterState = { ...updaterState, status: "error", message: `✗ ${e.message}` }));
+    autoUpdater.on("checking-for-update", () => setState({ status: "checking", message: "Checking for updates..." }));
+    autoUpdater.on("update-available", (info) => setState({ status: "downloading", version: info?.version, message: `Update v${info?.version} available - downloading...`, downloaded: false, percent: 0, transferred: 0, total: 0 }));
+    autoUpdater.on("update-not-available", (info) => setState({ status: "current", version: info?.version || app.getVersion(), message: "You're up to date.", downloaded: false }));
+    autoUpdater.on("download-progress", (p) => setState({ status: "downloading", percent: p.percent, transferred: p.transferred, total: p.total, bytesPerSecond: p.bytesPerSecond, message: `Downloading v${updaterState.version || ""} - ${Math.round(p.percent)}%` }));
+    autoUpdater.on("update-downloaded", (info) => setState({ status: "ready", version: info?.version, message: `Update v${info?.version} ready - restart to install.`, downloaded: true, percent: 100 }));
+    autoUpdater.on("error", (e) => setState({ status: "error", message: `Update error: ${e.message}` }));
     updaterModule = autoUpdater;
     return autoUpdater;
   } catch (e) {

@@ -62,6 +62,13 @@ export async function checkForUpdates() {
 export async function installUpdate() {
   if (g && g.installUpdate) return g.installUpdate();
 }
+// Subscribe to live updater state events from the main process. Returns a
+// cleanup function (no-op outside Electron). The callback fires whenever the
+// status changes - perfect for live download-progress UI.
+export function onUpdaterState(callback) {
+  if (g && g.onUpdaterState) return g.onUpdaterState(callback);
+  return () => {};
+}
 
 // Per-campaign save state (resume where you left off).
 export async function getSaveState(campaignId) {

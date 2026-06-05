@@ -48,6 +48,10 @@ html, body {
 .update-banner.show { display: flex; align-items: center; gap: 10px; }
 .update-banner .ub-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.05); font-size: 11px; flex-shrink: 0; }
 .update-banner .ub-msg { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.update-banner .ub-progress { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.update-banner .ub-progress-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.update-banner .ub-progress-track { height: 4px; background: rgba(255,255,255,0.12); border-radius: 2px; overflow: hidden; }
+.update-banner .ub-progress-fill { height: 100%; background: currentColor; transition: width 0.25s ease; }
 .update-banner .ub-spacer { flex: 0 0 8px; }
 .update-banner .ub-action { background: transparent; border: 1px solid currentColor; color: inherit; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: var(--mono); }
 .update-banner .ub-action:hover { background: rgba(255,255,255,0.06); }
