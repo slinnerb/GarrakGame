@@ -108,6 +108,25 @@ function registerIpc() {
     const campaign = comp.compileCampaign(spec, { brief });
     return { campaign, validation: schema.validateCampaign(campaign) };
   });
+
+  ipcMain.handle("ai:ping", async () => {
+    let settings = {};
+    try {
+      settings = JSON.parse(await fsp.readFile(SETTINGS_FILE, "utf8"));
+    } catch {}
+    const password = settings.ollamaPassword || process.env.GARRAK_OLLAMA_PASSWORD;
+    const baseUrl = settings.ollamaUrl || "https://10.0.0.54:11435";
+    const model = settings.ollamaModel || "qwen2.5:7b";
+    if (!password) return { ok: false, error: "No password saved — fill it in and click Save." };
+    try {
+      const ai = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "ai.js")).href);
+      const client = ai.makeClient({ baseUrl, model, password });
+      await client.chat([{ role: "user", content: "ping" }], { format: undefined, temperature: 0 });
+      return { ok: true, model, url: baseUrl };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
 }
 
 function createWindow() {

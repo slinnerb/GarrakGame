@@ -1,7 +1,7 @@
 // Teacher Studio: brief -> generate (real qwen2.5 in the desktop app) ->
 // review/edit JSON -> play-test or save. Generation + file I/O go through the
 // platform adapter; campaign validation runs right here in the renderer.
-import { generateCampaign, saveCampaign, getSettings, setSettings, inElectron } from "./platform.js";
+import { generateCampaign, saveCampaign, getSettings, setSettings, pingAi, inElectron } from "./platform.js";
 import { validateCampaign } from "../core/schema.js";
 
 const $ = (id) => document.getElementById(id);
@@ -12,17 +12,38 @@ async function loadSettings() {
   $("set-model").value = s.ollamaModel || "qwen2.5:7b";
   $("set-pass").value = s.ollamaPassword || "";
   $("env-note").textContent = inElectron
-    ? "Desktop app: live generation via your Ollama."
-    : "Browser preview: Generate shows a previously generated sample. Run the desktop app (npm start) for live generation.";
+    ? "Desktop app — settings save automatically (per-user)."
+    : "Browser preview — using local secret.local.txt for the password.";
 }
 
-async function saveConn() {
-  await setSettings({
-    ollamaUrl: $("set-url").value.trim(),
-    ollamaModel: $("set-model").value.trim(),
-    ollamaPassword: $("set-pass").value,
-  });
-  setStatus("Connection saved.");
+let saveTimer = null;
+async function saveConn(immediate) {
+  clearTimeout(saveTimer);
+  const doSave = async () => {
+    await setSettings({
+      ollamaUrl: $("set-url").value.trim(),
+      ollamaModel: $("set-model").value.trim(),
+      ollamaPassword: $("set-pass").value,
+    });
+    $("save-state").textContent = "saved ✓";
+    setTimeout(() => ($("save-state").textContent = ""), 1500);
+  };
+  if (immediate) return doSave();
+  $("save-state").textContent = "saving…";
+  saveTimer = setTimeout(doSave, 400);
+}
+
+async function checkConn() {
+  setConnBadge("dim", "checking…");
+  const r = await pingAi();
+  if (r.ok) setConnBadge("ok", `Connected — ${r.model || "AI"}`);
+  else setConnBadge("bad", r.error || "Not connected");
+}
+
+function setConnBadge(cls, text) {
+  const badge = $("conn-badge");
+  badge.querySelector(".dot").className = `dot ${cls}`;
+  $("conn-text").textContent = text;
 }
 
 function setStatus(msg) {
@@ -123,8 +144,15 @@ function esc(s) {
 }
 
 $("gen-btn").onclick = onGenerate;
-$("save-conn").onclick = saveConn;
 $("btn-validate").onclick = onValidate;
 $("btn-playtest").onclick = onPlaytest;
 $("btn-save").onclick = onSave;
-loadSettings();
+$("test-conn").onclick = checkConn;
+// auto-save settings on any change (debounced) so the user never has to click "Save"
+["set-url", "set-model", "set-pass"].forEach((id) => {
+  $(id).addEventListener("input", () => saveConn(false));
+});
+(async () => {
+  await loadSettings();
+  await checkConn();
+})();

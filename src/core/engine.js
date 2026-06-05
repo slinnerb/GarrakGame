@@ -189,6 +189,44 @@ export function pickAnother(s) {
   return view(s);
 }
 
+// Summarize the session for the end-of-session recap. Pure read - safe to call
+// anytime (handy for "preview" mid-session too). Aggregates everything the
+// transcript already records: target words used vs missed, write-in quality,
+// mistakes to review, roll history, and a per-section breakdown.
+export function recap(s) {
+  const writeIns = s.transcript.filter((t) => t.type === "writeIn" || t.type === "spellWriteIn");
+  const allBank = (s.campaign.sections || []).flatMap((sec) => sec.targetLanguageBank.map((b) => ({ ...b, sectionId: sec.id })));
+  const usedSet = new Set();
+  for (const w of writeIns) for (const u of (w.grade?.distinctUsed || [])) usedSet.add(u.toLowerCase());
+  const mastered = allBank.filter((b) => usedSet.has(b.text.toLowerCase()));
+  const missed = allBank.filter((b) => !usedSet.has(b.text.toLowerCase()));
+  const masteryPct = allBank.length ? Math.round((mastered.length / allBank.length) * 100) : 0;
+  const avgQuality = writeIns.length
+    ? Math.round((writeIns.reduce((a, w) => a + (w.grade?.qualityScore || 0), 0) / writeIns.length) * 100)
+    : 0;
+  const mistakes = writeIns
+    .filter((w) => (w.grade?.mistakes || []).length)
+    .map((w) => ({ text: w.text, mistakes: w.grade.mistakes, corrected: w.grade.corrected }));
+  const rolls = s.transcript.filter((t) => t.type === "roll").map((t) => t.roll);
+  const rollWins = rolls.filter((r) => r.success).length;
+  const spellsUsed = s.transcript.filter((t) => t.type === "spell").map((t) => t.spellId);
+  return {
+    title: s.campaign.title,
+    cefrLevel: s.campaign.cefrLevel,
+    difficulty: s.difficulty,
+    hintsOn: s.hintsOn,
+    hud: { points: s.points, inspiration: s.inspiration, progressPct: Math.round(s.progressPct) },
+    answersGiven: writeIns.length,
+    avgQuality,
+    masteryPct,
+    mastered: mastered.map((b) => ({ text: b.text, l1Hint: b.l1Hint })),
+    missed: missed.map((b) => ({ text: b.text, l1Hint: b.l1Hint })),
+    mistakes,
+    rolls: { total: rolls.length, wins: rollWins },
+    spellsUsed,
+  };
+}
+
 export function castSpell(s, spellId, writeInText) {
   const sp = s.spells.find((x) => x.id === spellId);
   if (!sp) throw new Error(`spell ${spellId} not in loadout`);

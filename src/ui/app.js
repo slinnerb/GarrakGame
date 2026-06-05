@@ -11,6 +11,7 @@ import {
   pickAnother,
   castSpell,
   PHASES,
+  recap,
 } from "../core/engine.js";
 import { loadDefaultCampaign } from "./platform.js";
 
@@ -112,8 +113,8 @@ function renderInteraction(vw) {
   const el = $("interaction");
 
   if (vw.ended) {
-    el.innerHTML = `<div class="ending">✺ ${escapeHtml(vw.endingSummary || "The End")}</div>
-      <button id="again">Play again</button>`;
+    el.innerHTML = `<div class="ending">✺ ${escapeHtml(vw.endingSummary || "The End")}</div>` + renderRecap(recap(session)) +
+      `<div class="row"><button id="again" class="primary">Play again</button></div>`;
     $("again").onclick = newSession;
     return;
   }
@@ -179,6 +180,48 @@ function onCastSpell(spellId) {
   } else {
     act(() => castSpell(session, spellId));
   }
+}
+
+function renderRecap(r) {
+  const mastered = r.mastered.length
+    ? r.mastered.map((b) => `<li><span class="tl">${escapeHtml(b.text)}</span>${b.l1Hint ? ` <span class="dim">(${escapeHtml(b.l1Hint)})</span>` : ""}</li>`).join("")
+    : `<li class="dim">(none yet)</li>`;
+  const missed = r.missed.length
+    ? r.missed.map((b) => `<li><span class="amber">${escapeHtml(b.text)}</span>${b.l1Hint ? ` <span class="dim">(${escapeHtml(b.l1Hint)})</span>` : ""}</li>`).join("")
+    : `<li class="ok">all words used!</li>`;
+  const mistakes = r.mistakes.length
+    ? r.mistakes
+        .map(
+          (m) => `<li><div class="dim small">you wrote:</div><div>"${escapeHtml(m.text)}"</div>
+            <ul class="mistake-list">${m.mistakes.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+            ${m.corrected ? `<div class="dim small">try: "${escapeHtml(m.corrected)}"</div>` : ""}</li>`
+        )
+        .join("")
+    : `<li class="ok">no grammar/spelling notes — clean writing!</li>`;
+  return `<div class="recap">
+    <h3>Session Recap <span class="dim small">[${escapeHtml(r.cefrLevel || "")} · ${escapeHtml(r.difficulty)}]</span></h3>
+    <div class="recap-stats">
+      <span><b>${r.hud.points}</b> points</span>
+      <span><b>${r.masteryPct}%</b> language mastery</span>
+      <span><b>${r.avgQuality}%</b> avg quality</span>
+      <span><b>${r.rolls.wins}/${r.rolls.total}</b> rolls won</span>
+      <span><b>${r.spellsUsed.length}</b> spells used</span>
+    </div>
+    <div class="recap-cols">
+      <div class="recap-col">
+        <h4>✓ Words you used</h4>
+        <ul class="recap-list">${mastered}</ul>
+      </div>
+      <div class="recap-col">
+        <h4>○ Words to practice</h4>
+        <ul class="recap-list">${missed}</ul>
+      </div>
+    </div>
+    <div class="recap-section">
+      <h4>Notes for next time</h4>
+      <ul class="recap-list">${mistakes}</ul>
+    </div>
+  </div>`;
 }
 
 function renderFeedback(vw) {

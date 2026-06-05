@@ -17,10 +17,14 @@
         <aside id="left">
           <div class="panel">
             <h3>AI Connection</h3>
+            <div id="conn-badge" class="conn-badge"><span class="dot dim"></span><span id="conn-text">checking…</span></div>
             <label class="fld">Server URL<input id="set-url" type="text" /></label>
             <label class="fld">Model<input id="set-model" type="text" /></label>
-            <label class="fld">Password<input id="set-pass" type="password" /></label>
-            <button id="save-conn">Save connection</button>
+            <label class="fld">Password<input id="set-pass" type="password" autocomplete="off" /></label>
+            <div class="row">
+              <button id="test-conn">Test connection</button>
+              <span id="save-state" class="dim small"></span>
+            </div>
             <div id="env-note" class="dim small"></div>
           </div>
         </aside>

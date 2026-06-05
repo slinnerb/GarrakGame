@@ -113,3 +113,23 @@ button.primary { background: #1f3315; border-color: var(--accent); color: #eafbe
 .validation { margin-top: 10px; }
 .validation .bad { color: var(--danger); }
 .validation ul { color: var(--danger); margin: 4px 0; padding-left: 18px; }
+
+/* Session recap */
+.recap { margin: 18px 0; border: 1px solid var(--border); border-radius: 6px; padding: 16px; background: #0a0d08; max-width: 720px; }
+.recap h3 { margin: 0 0 10px; color: var(--amber); }
+.recap h4 { margin: 0 0 6px; color: var(--amber); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+.recap-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; font-size: 13px; }
+.recap-stats b { color: var(--accent); }
+.recap-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 14px; }
+.recap-list { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; }
+.recap-list li { padding: 3px 0; font-size: 13px; }
+.recap-section { border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 6px; }
+.mistake-list { color: var(--danger); margin: 4px 0; padding-left: 18px; }
+.amber { color: var(--amber); }
+
+/* Connection badge */
+.conn-badge { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; font-size: 13px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-dim); display: inline-block; }
+.dot.ok { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.dot.bad { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.dot.dim { background: var(--ink-dim); }

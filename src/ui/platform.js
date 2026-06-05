@@ -24,10 +24,26 @@ export async function loadCampaign(id) {
 
 export async function generateCampaign(brief) {
   if (g) return g.generateCampaign(brief);
-  // browser preview has no model access: show a previously generated sample
-  const res = await fetch("/campaigns/generated-test.json");
-  if (!res.ok) throw new Error("No generated sample in browser preview (run the desktop app for live generation).");
-  return { campaign: await res.json(), validation: { ok: true, errors: [] }, browserSample: true };
+  // browser preview proxies through the dev server which reads secret.local.txt
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ brief }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `dev server returned ${res.status}`);
+  return data;
+}
+
+export async function pingAi() {
+  if (g && g.pingAi) return g.pingAi();
+  try {
+    const res = await fetch("/api/ping");
+    if (!res.ok) return { ok: false, error: `server ${res.status}` };
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 }
 
 export async function saveCampaign(campaign) {

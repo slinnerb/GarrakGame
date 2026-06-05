@@ -3,6 +3,7 @@ dist/
 out/
 build/
 smoke.png
+.lastgen.json
 *.local
 secret.local.txt
 .secrets/
