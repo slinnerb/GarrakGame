@@ -10,11 +10,13 @@
     <div id="app">
       <header id="topbar">
         <div class="title">GARAK<span class="dim">::</span>STUDIO <span class="brand">a Wrench and Ram project</span></div>
-        <span id="build-badge" class="build-badge" title="build info"></span>
-        <button id="check-update" class="check-update" title="Check for updates">⟳</button>
-        <span id="update-status" class="update-status"></span>
-        <a class="modelink" href="./index.html">▶ Back to Play</a>
+        <div class="topbar-right">
+          <span id="build-badge" class="build-badge" title="build info"></span>
+          <button id="check-update" class="check-update" title="Check for updates">⟳</button>
+          <a class="modelink" href="./index.html">▶ Back to Play</a>
+        </div>
       </header>
+      <div id="update-banner" class="update-banner" role="status" aria-live="polite"></div>
 
       <main id="main">
         <aside id="left">

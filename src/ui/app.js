@@ -135,14 +135,15 @@ function render() {
 }
 
 function renderHud(hud) {
-  const bars = 18;
+  // Compact HUD - labels removed so it fits any window. The bottombar already
+  // shows difficulty, so we drop it here. Tooltips clarify what each icon is.
+  const bars = 14;
   const filled = Math.round((hud.progressPct / 100) * bars);
   const bar = "█".repeat(filled) + "░".repeat(bars - filled);
   $("hud").innerHTML =
-    `<span>★ Points <b>${hud.points}</b></span>` +
-    `<span>Progress [${bar}] ${hud.progressPct}%</span>` +
-    `<span>✦ Inspiration <b>${hud.inspiration}</b></span>` +
-    `<span class="dim">[${hud.difficulty}]</span>`;
+    `<span title="Points">★ <b>${hud.points}</b></span>` +
+    `<span title="Progress toward next Inspiration">[${bar}] ${hud.progressPct}%</span>` +
+    `<span title="Inspiration (reroll)">✦ <b>${hud.inspiration}</b></span>`;
 }
 
 function renderBank(vw) {

@@ -1,32 +1,52 @@
-// Wires the "Check for updates" button + status text shared by both screens.
+// Manual "Check for updates" button. Writes status into a dedicated slim
+// banner below the topbar (NOT into the topbar itself) so a long status string
+// like "Update v0.1.3 available — downloading 42%" never shoves the HUD around.
+// The banner appears only when there's something to show and can be dismissed.
 import { checkForUpdates, installUpdate } from "./platform.js";
 
-const STATUS_CLASS = { idle: "dim", checking: "dim", current: "ok", downloading: "amber", ready: "ok", error: "bad", dev: "dim" };
+const ICON = { idle: "", checking: "⟳", current: "✓", downloading: "↓", ready: "✓", error: "!", dev: "ⓘ" };
 
-function setStatus(text, status = "idle") {
-  const el = document.getElementById("update-status");
+function showBanner(text, status, opts = {}) {
+  const el = document.getElementById("update-banner");
   if (!el) return;
-  el.innerHTML = text ? `<span class="${STATUS_CLASS[status] || "dim"}">${escapeHtml(text)}</span>` : "";
-  if (status === "ready") {
-    const btn = document.createElement("button");
-    btn.textContent = "Restart & install";
-    btn.className = "install-btn";
-    btn.onclick = () => installUpdate();
-    el.appendChild(document.createTextNode(" "));
-    el.appendChild(btn);
+  if (!text) {
+    el.className = "update-banner";
+    el.innerHTML = "";
+    return;
   }
+  el.className = `update-banner show ${status || ""}`;
+  el.innerHTML = `<span class="ub-icon">${escapeHtml(ICON[status] || "•")}</span>
+    <span class="ub-msg">${escapeHtml(text)}</span>
+    <span class="ub-spacer"></span>
+    ${opts.actionLabel ? `<button class="ub-action">${escapeHtml(opts.actionLabel)}</button>` : ""}
+    <button class="ub-dismiss" title="Dismiss">×</button>`;
+  const action = el.querySelector(".ub-action");
+  if (action && opts.onAction) action.onclick = opts.onAction;
+  el.querySelector(".ub-dismiss").onclick = () => showBanner("");
+  if (opts.autoHideMs) setTimeout(() => showBanner(""), opts.autoHideMs);
 }
 
 async function onCheck() {
   const btn = document.getElementById("check-update");
   if (btn) btn.disabled = true;
-  setStatus("Checking…", "checking");
+  showBanner("Checking for updates…", "checking");
   try {
     const r = await checkForUpdates();
-    setStatus(r.message || r.status, r.status);
-    if (r.status === "current") setTimeout(() => setStatus(""), 4000);
+    if (r.status === "current") {
+      showBanner(r.message || "You're up to date.", "current", { autoHideMs: 4000 });
+    } else if (r.status === "ready") {
+      showBanner(r.message || "Update ready.", "ready", { actionLabel: "Restart & install", onAction: () => installUpdate() });
+    } else if (r.status === "downloading") {
+      showBanner(r.message || "Downloading…", "downloading");
+    } else if (r.status === "dev") {
+      showBanner(r.message || "Dev build.", "dev", { autoHideMs: 5000 });
+    } else if (r.status === "error") {
+      showBanner(r.message || "Update check failed.", "error");
+    } else {
+      showBanner(r.message || r.status || "", "current", { autoHideMs: 4000 });
+    }
   } catch (e) {
-    setStatus("✗ " + e.message, "error");
+    showBanner("✗ " + e.message, "error");
   } finally {
     if (btn) btn.disabled = false;
   }
