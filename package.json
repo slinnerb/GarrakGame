@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Garak :: Game — an English-teaching choose-a-path text RPG by Wrench & Ram",
+  "description": "Garak :: Game — an English-teaching choose-a-path text RPG, a Wrench and Ram project",
   "main": "electron/main.cjs",
   "scripts": {
     "selfcheck": "node scripts/selfcheck.js",
@@ -13,8 +13,9 @@
   },
   "build": {
     "appId": "com.wrenchandram.garak",
-    "productName": "Garak :: Game",
-    "copyright": "© Wrench & Ram",
+    "productName": "Garak Game",
+    "copyright": "© Wrench and Ram",
+    "artifactName": "Garak-Game-Setup-${version}.${ext}",
     "files": [
       "src/**/*",
       "campaigns/**/*",
