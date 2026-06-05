@@ -1,7 +1,16 @@
 // Teacher Studio: brief -> generate (real qwen2.5 in the desktop app) ->
 // review/edit JSON -> play-test or save. Generation + file I/O go through the
 // platform adapter; campaign validation runs right here in the renderer.
-import { generateCampaign, saveCampaign, getSettings, setSettings, pingAi, inElectron } from "./platform.js";
+import { generateCampaign, saveCampaign, getSettings, setSettings, pingAi, getBuildInfo, inElectron } from "./platform.js";
+
+(async () => {
+  const b = await getBuildInfo();
+  const el = document.getElementById("build-badge");
+  if (el) {
+    el.textContent = `v${b.version}${b.sha && b.sha !== "?" ? " · " + b.sha + (b.dirty ? "*" : "") : ""}`;
+    el.title = `${b.product || "Garak Game"}\nversion ${b.version}\nbuild ${b.sha}${b.dirty ? " (uncommitted changes)" : ""}\n${b.buildDate}`;
+  }
+})();
 import { validateCampaign } from "../core/schema.js";
 
 const $ = (id) => document.getElementById(id);

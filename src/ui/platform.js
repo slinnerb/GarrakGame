@@ -35,6 +35,15 @@ export async function generateCampaign(brief) {
   return data;
 }
 
+export async function getBuildInfo() {
+  // Both Electron and the dev preview serve src/ui/buildinfo.json statically.
+  try {
+    const res = await fetch("./buildinfo.json");
+    if (res.ok) return await res.json();
+  } catch {}
+  return { version: "?", sha: "?", buildDate: "" };
+}
+
 export async function pingAi() {
   if (g && g.pingAi) return g.pingAi();
   try {

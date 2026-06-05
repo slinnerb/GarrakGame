@@ -133,3 +133,7 @@ button.primary { background: #1f3315; border-color: var(--accent); color: #eafbe
 .dot.ok { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 .dot.bad { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
 .dot.dim { background: var(--ink-dim); }
+
+/* Build / version badge */
+.build-badge { color: var(--ink-dim); font-size: 11px; letter-spacing: 1px; border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; white-space: nowrap; cursor: help; }
+.build-badge:empty { display: none; }

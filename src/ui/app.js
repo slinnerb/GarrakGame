@@ -13,7 +13,16 @@ import {
   PHASES,
   recap,
 } from "../core/engine.js";
-import { loadDefaultCampaign } from "./platform.js";
+import { loadDefaultCampaign, getBuildInfo } from "./platform.js";
+
+(async () => {
+  const b = await getBuildInfo();
+  const el = document.getElementById("build-badge");
+  if (el) {
+    el.textContent = `v${b.version}${b.sha && b.sha !== "?" ? " · " + b.sha + (b.dirty ? "*" : "") : ""}`;
+    el.title = `${b.product || "Garak Game"}\nversion ${b.version}\nbuild ${b.sha}${b.dirty ? " (uncommitted changes)" : ""}\n${b.buildDate}`;
+  }
+})();
 
 const $ = (id) => document.getElementById(id);
 let campaign = null;

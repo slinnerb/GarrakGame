@@ -4,6 +4,7 @@ out/
 build/
 smoke.png
 .lastgen.json
+src/ui/buildinfo.json
 *.local
 secret.local.txt
 .secrets/

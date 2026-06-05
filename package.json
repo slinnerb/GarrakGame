@@ -7,9 +7,15 @@
   "main": "electron/main.cjs",
   "scripts": {
     "selfcheck": "node scripts/selfcheck.js",
+    "stamp": "node scripts/stamp-build.js",
+    "prestart": "node scripts/stamp-build.js",
+    "prepack": "node scripts/stamp-build.js",
+    "predist": "node scripts/stamp-build.js",
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags"
   },
   "build": {
     "appId": "com.wrenchandram.garak",
