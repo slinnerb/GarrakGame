@@ -38,7 +38,7 @@ check("section bank shows L1 hints when on", vw.bank.length > 0 && vw.bank[0].hi
 vw = choose(s, "c_coffee");
 check("ordering coffee opens a write-in", vw.phase === PHASES.WRITE_IN && !!vw.pending.writeIn);
 
-vw = submitWriteIn(s, "Hello, I would like a coffee, please.");
+vw = await submitWriteIn(s, "Hello, I would like a coffee, please.");
 check("good answer detected target language", vw.lastGrade.distinctCount >= 3);
 check("good answer earned a roll bonus", vw.lastGrade.rollBonus > 0);
 check("write-in moves to the dice check", vw.phase === PHASES.CHECK);
@@ -49,7 +49,7 @@ check("successful roll reaches the square", vw.node.id === "n_square" && vw.phas
 vw = choose(s, "c_photo");
 check("photo path springs the hidden trap (police)", vw.node.id === "n_police" && vw.node.isConsequence);
 
-vw = castSpell(s, "sp_jail", "I'm sorry, I didn't know.");
+vw = await castSpell(s, "sp_jail", "I'm sorry, I didn't know.");
 check("Get Out of Jail Free escapes cleanly", vw.node.id === "n_release_free");
 check("spell is now spent", vw.spells.find((x) => x.id === "sp_jail").used === true);
 

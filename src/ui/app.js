@@ -13,7 +13,21 @@ import {
   PHASES,
   recap,
 } from "../core/engine.js";
-import { loadDefaultCampaign, getBuildInfo } from "./platform.js";
+import { loadDefaultCampaign, getBuildInfo, gradeAnswer } from "./platform.js";
+import { stubGrade } from "../core/grader.js";
+
+// Real AI grader with automatic fallback to the stub if the model is
+// unreachable -- keeps the game playable no matter what.
+async function smartGrader(text, bank, opts) {
+  try {
+    return await gradeAnswer(text, bank, opts);
+  } catch (e) {
+    console.warn("AI grader failed, falling back to stub:", e.message);
+    const g = stubGrade(text, bank, opts);
+    g.fallback = true;
+    return g;
+  }
+}
 
 (async () => {
   const b = await getBuildInfo();
@@ -48,19 +62,26 @@ function newSession() {
     difficulty: $("difficulty").value,
     hintsOn: $("hints").checked,
     rng: Math.random,
+    grade: smartGrader,
   });
   setStatus("");
   render();
 }
 
-function act(fn) {
+let busy = false;
+async function act(fn) {
+  busy = true;
+  setStatus("⏳ grading…");
+  document.querySelectorAll("#interaction button, #interaction textarea").forEach((b) => (b.disabled = true));
   try {
-    fn();
+    await fn();
     setStatus("");
   } catch (e) {
     setStatus("! " + e.message);
+  } finally {
+    busy = false;
+    render();
   }
-  render();
 }
 
 function setStatus(msg) {
@@ -244,8 +265,9 @@ function renderFeedback(vw) {
     ? `<ul>${g.mistakes.map((m) => `<li>${escapeHtml(m)}</li>`).join("")}</ul>`
     : `<span class="ok">clean!</span>`;
   const pct = Math.round(g.qualityScore * 100);
+  const tag = g.stub && !g.fallback ? "stub grader" : g.fallback ? "AI unreachable — using stub" : "qwen2.5:7b";
   $("feedback").innerHTML = `
-    <h3>Feedback ${g.stub ? '<span class="dim small">(stub grader)</span>' : ""}</h3>
+    <h3>Feedback <span class="dim small">(${escapeHtml(tag)})</span></h3>
     <div>Quality <b>${pct}%</b> &middot; Target language used: <b>${used}</b> &middot; Roll bonus <b>+${g.rollBonus}</b></div>
     <div>Notes: ${mistakes}</div>
     ${g.corrected ? `<div class="dim small">Suggested: ${escapeHtml(g.corrected)}</div>` : ""}`;

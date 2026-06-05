@@ -74,6 +74,20 @@ createServer(async (req, res) => {
       }
     }
 
+    if (req.method === "POST" && req.url === "/api/grade") {
+      const password = await readSecret();
+      if (!password) return sendJson(res, 503, { error: "No secret.local.txt" });
+      const body = JSON.parse(await readBody(req));
+      const { ai } = await loadAi();
+      try {
+        const client = ai.makeClient({ baseUrl: DEFAULT_URL, model: DEFAULT_MODEL, password });
+        const grade = await ai.aiGrade(client, body.text, body.bank, body.opts);
+        return sendJson(res, 200, grade);
+      } catch (e) {
+        return sendJson(res, 500, { error: e.message });
+      }
+    }
+
     if (req.method === "POST" && req.url === "/api/generate") {
       const password = await readSecret();
       if (!password) return sendJson(res, 503, { error: "No secret.local.txt — dev preview can't reach Ollama. Run the desktop app for live generation." });

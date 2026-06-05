@@ -137,3 +137,10 @@ button.primary { background: #1f3315; border-color: var(--accent); color: #eafbe
 /* Build / version badge */
 .build-badge { color: var(--ink-dim); font-size: 11px; letter-spacing: 1px; border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; white-space: nowrap; cursor: help; }
 .build-badge:empty { display: none; }
+.check-update { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); padding: 4px 8px; font-size: 13px; cursor: pointer; border-radius: 4px; }
+.check-update:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.update-status { font-size: 12px; color: var(--ink-dim); }
+.update-status .ok { color: var(--accent); }
+.update-status .amber { color: var(--amber); }
+.update-status .bad { color: var(--danger); }
+.install-btn { background: #1f3315; border: 1px solid var(--accent); color: #eafbe0; padding: 3px 8px; font-size: 12px; border-radius: 3px; cursor: pointer; margin-left: 6px; }

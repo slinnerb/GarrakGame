@@ -11,4 +11,7 @@ contextBridge.exposeInMainWorld("garrak", {
   setSettings: (settings) => ipcRenderer.invoke("settings:set", settings),
   generateCampaign: (brief) => ipcRenderer.invoke("ai:generate", brief),
   pingAi: () => ipcRenderer.invoke("ai:ping"),
+  gradeAnswer: (payload) => ipcRenderer.invoke("ai:grade", payload),
+  checkForUpdates: () => ipcRenderer.invoke("updater:check"),
+  installUpdate: () => ipcRenderer.invoke("updater:install"),
 });

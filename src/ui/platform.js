@@ -55,6 +55,26 @@ export async function pingAi() {
   }
 }
 
+export async function checkForUpdates() {
+  if (g && g.checkForUpdates) return g.checkForUpdates();
+  return { status: "dev", message: "Dev preview — updates only work in the installed app.", version: "0.1.0", downloaded: false };
+}
+export async function installUpdate() {
+  if (g && g.installUpdate) return g.installUpdate();
+}
+
+export async function gradeAnswer(text, bank, opts) {
+  if (g && g.gradeAnswer) return g.gradeAnswer({ text, bank, opts });
+  const res = await fetch("/api/grade", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, bank, opts }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `dev server returned ${res.status}`);
+  return data;
+}
+
 export async function saveCampaign(campaign) {
   if (g) return g.saveCampaign(campaign);
   // browser fallback: download as a file

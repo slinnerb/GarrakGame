@@ -142,13 +142,15 @@ export function choose(s, choiceId) {
   return resolveSuccess(s, c); // plain narrative choice
 }
 
-export function submitWriteIn(s, text) {
+export async function submitWriteIn(s, text) {
   if (s.phase !== PHASES.WRITE_IN) throw new Error(`submitWriteIn() not allowed in phase ${s.phase}`);
   const c = choiceById(s, s.pendingChoiceId);
   const sec = section(s);
-  const grade = s.grade(text, sec ? sec.targetLanguageBank : [], {
+  const grade = await s.grade(text, sec ? sec.targetLanguageBank : [], {
     maxGrammarBonus: DIFFICULTIES[s.difficulty]?.maxGrammarBonus ?? 4,
     expectedTargets: c.writeIn?.expectedTargets,
+    cefrLevel: s.campaign.cefrLevel,
+    prompt: c.writeIn?.prompt,
   });
   log(s, { type: "writeIn", text, grade });
   applyGrade(s, grade);
@@ -227,7 +229,7 @@ export function recap(s) {
   };
 }
 
-export function castSpell(s, spellId, writeInText) {
+export async function castSpell(s, spellId, writeInText) {
   const sp = s.spells.find((x) => x.id === spellId);
   if (!sp) throw new Error(`spell ${spellId} not in loadout`);
   if (sp.used) throw new Error(`spell ${spellId} already used`);
@@ -235,8 +237,10 @@ export function castSpell(s, spellId, writeInText) {
   let upgraded = false;
   if (sp.upgradeBeat && typeof writeInText === "string" && writeInText.trim()) {
     const sec = section(s);
-    const grade = s.grade(writeInText, sec ? sec.targetLanguageBank : [], {
+    const grade = await s.grade(writeInText, sec ? sec.targetLanguageBank : [], {
       maxGrammarBonus: DIFFICULTIES[s.difficulty]?.maxGrammarBonus ?? 4,
+      cefrLevel: s.campaign.cefrLevel,
+      prompt: sp.upgradeBeat.writePrompt,
     });
     applyGrade(s, grade);
     upgraded = grade.isHighQuality;

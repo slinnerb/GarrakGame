@@ -109,6 +109,37 @@ function registerIpc() {
     return { campaign, validation: schema.validateCampaign(campaign) };
   });
 
+  ipcMain.handle("ai:grade", async (_e, { text, bank, opts }) => {
+    let settings = {};
+    try {
+      settings = JSON.parse(await fsp.readFile(SETTINGS_FILE, "utf8"));
+    } catch {}
+    const password = settings.ollamaPassword || process.env.GARRAK_OLLAMA_PASSWORD;
+    const baseUrl = settings.ollamaUrl || "https://10.0.0.54:11435";
+    const model = settings.ollamaModel || "qwen2.5:7b";
+    if (!password) throw new Error("No AI password set.");
+    const ai = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "ai.js")).href);
+    const client = ai.makeClient({ baseUrl, model, password });
+    return ai.aiGrade(client, text, bank, opts);
+  });
+
+  ipcMain.handle("updater:check", async () => {
+    if (isDev) return { status: "dev", message: "Dev build — updates only work in the installed app.", version: app.getVersion(), downloaded: false };
+    const updater = setupUpdater();
+    if (!updater) return { status: "error", message: "Updater not available", downloaded: false };
+    updaterState = { status: "checking", message: "Checking for updates…", version: app.getVersion(), downloaded: false };
+    try {
+      await updater.checkForUpdates();
+    } catch (e) {
+      updaterState = { status: "error", message: `✗ ${e.message}`, downloaded: false };
+    }
+    return updaterState;
+  });
+  ipcMain.handle("updater:status", () => ({ ...updaterState, currentVersion: app.getVersion() }));
+  ipcMain.handle("updater:install", () => {
+    if (updaterModule && updaterState.downloaded) updaterModule.quitAndInstall();
+  });
+
   ipcMain.handle("ai:ping", async () => {
     let settings = {};
     try {
@@ -145,6 +176,29 @@ function createWindow() {
   return win;
 }
 
+// Updater state — surfaced to the renderer through IPC so the UI can show
+// "checking / up-to-date / downloading / ready to install" without polling.
+let updaterState = { status: "idle", version: null, message: null, downloaded: false };
+let updaterModule = null;
+
+function setupUpdater() {
+  if (updaterModule) return updaterModule;
+  try {
+    const { autoUpdater } = require("electron-updater");
+    autoUpdater.autoDownload = true;
+    autoUpdater.on("checking-for-update", () => (updaterState = { ...updaterState, status: "checking", message: "Checking for updates…" }));
+    autoUpdater.on("update-available", (info) => (updaterState = { status: "downloading", version: info?.version, message: `Update v${info?.version} available — downloading…`, downloaded: false }));
+    autoUpdater.on("update-not-available", (info) => (updaterState = { status: "current", version: info?.version || app.getVersion(), message: "You're up to date.", downloaded: false }));
+    autoUpdater.on("download-progress", (p) => (updaterState = { ...updaterState, status: "downloading", message: `Downloading… ${Math.round(p.percent)}%` }));
+    autoUpdater.on("update-downloaded", (info) => (updaterState = { status: "ready", version: info?.version, message: `Update v${info?.version} ready — restart to install.`, downloaded: true }));
+    autoUpdater.on("error", (e) => (updaterState = { ...updaterState, status: "error", message: `✗ ${e.message}` }));
+    updaterModule = autoUpdater;
+    return autoUpdater;
+  } catch (e) {
+    return null;
+  }
+}
+
 app.whenReady().then(async () => {
   protocol.handle("app", async (request) => {
     try {
@@ -160,15 +214,9 @@ app.whenReady().then(async () => {
   registerIpc();
   const mainWindow = createWindow();
 
-  // Auto-update: only meaningful once a GitHub release exists and publish
-  // owner/repo are filled in package.json. Safe no-op otherwise.
-  try {
-    const { autoUpdater } = require("electron-updater");
-    autoUpdater.autoDownload = true;
-    if (!isDev) autoUpdater.checkForUpdatesAndNotify();
-  } catch (e) {
-    console.warn("electron-updater not active:", e.message);
-  }
+  // Auto-update — checks GitHub Releases on launch (if installed, not in dev).
+  const updater = setupUpdater();
+  if (updater && !isDev) updater.checkForUpdatesAndNotify().catch(() => {});
 
   if (process.env.GARRAK_SMOKE) {
     mainWindow.webContents.once("did-finish-load", () => {
