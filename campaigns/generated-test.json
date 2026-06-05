@@ -1,0 +1,219 @@
+{
+  "schemaVersion": "1.0",
+  "id": "gen-konbini-adventure-buying-lunch",
+  "title": "Konbini Adventure: Buying Lunch",
+  "cefrLevel": "A1",
+  "estimatedMinutes": 30,
+  "author": "AI (qwen2.5:7b)",
+  "studentProfile": {
+    "name": "",
+    "interests": [
+      "anime, snacks"
+    ]
+  },
+  "premise": "You are in a Japanese convenience store (konbini) to buy some snacks and lunch for your favorite anime character. You want to practice ordering and asking about prices.",
+  "defaultDifficulty": "adventurer",
+  "loadoutSize": 3,
+  "startNodeId": "n_0_0",
+  "sections": [
+    {
+      "id": "s1",
+      "title": "Entering the Store",
+      "targetLanguageBank": [
+        {
+          "text": "hello",
+          "type": "vocab",
+          "l1Hint": "こんにちは (Konnichiwa)"
+        },
+        {
+          "text": "I would like",
+          "type": "phrase",
+          "l1Hint": "私には...がほしいです (Watashi ni wa... ga hoshii desu)"
+        },
+        {
+          "text": "how much is",
+          "type": "phrase",
+          "l1Hint": "いくらですか？ (Ikura desu ka?)"
+        },
+        {
+          "text": "50 yen",
+          "type": "vocab",
+          "l1Hint": "五十円 (Gojuunen)"
+        },
+        {
+          "text": "100 yen",
+          "type": "vocab",
+          "l1Hint": "百円 (Hyaku'en)"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Buying Lunch",
+      "targetLanguageBank": [
+        {
+          "text": "thank you",
+          "type": "phrase",
+          "l1Hint": "ありがとう (Arigatou)"
+        },
+        {
+          "text": "one piece of [anime snack]",
+          "type": "phrase",
+          "l1Hint": "一つ [anime snack] (Hitotsu [anime snack])"
+        },
+        {
+          "text": "ten pieces of [anime snack]",
+          "type": "phrase",
+          "l1Hint": "十個 [anime snack] (Tokko [anime snack])"
+        },
+        {
+          "text": "two hundred yen",
+          "type": "vocab",
+          "l1Hint": "二百円 (Nihyaku'en)"
+        },
+        {
+          "text": "five hundred yen",
+          "type": "vocab",
+          "l1Hint": "五百円 (Gohyaku'en)"
+        }
+      ]
+    }
+  ],
+  "spellPool": [
+    {
+      "id": "sp_foresight_0",
+      "name": "Foresight",
+      "icon": "[EYE]",
+      "flavor": "A magical spell that helps you predict the future, but only for a short moment.",
+      "baseEffect": {
+        "type": "revealDC",
+        "text": "A magical spell that helps you predict the future, but only for a short moment."
+      }
+    }
+  ],
+  "nodes": {
+    "n_0_0": {
+      "id": "n_0_0",
+      "sectionId": "s1",
+      "text": "You enter the store and greet the clerk. There are many shelves filled with snacks, drinks, and other items.",
+      "choices": [
+        {
+          "id": "n_0_0_c0",
+          "label": "Say 'Hello' to the clerk",
+          "writeIn": {
+            "prompt": "Write a simple greeting in English.",
+            "expectedTargets": 1
+          },
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_0_1",
+            "points": 2
+          }
+        },
+        {
+          "id": "n_0_0_c1",
+          "label": "Look at the snack you like",
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_0_1",
+            "points": 2
+          }
+        }
+      ]
+    },
+    "n_0_1": {
+      "id": "n_0_1",
+      "sectionId": "s1",
+      "text": "You point to your favorite anime snack and ask how much it costs.",
+      "choices": [
+        {
+          "id": "n_0_1_c0",
+          "label": "Ask for the price",
+          "writeIn": {
+            "prompt": "Write a sentence asking about the price in English.",
+            "expectedTargets": 1
+          },
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_1_0",
+            "points": 2
+          }
+        },
+        {
+          "id": "n_0_1_c1",
+          "label": "Pick another item",
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_1_0",
+            "points": 2
+          }
+        }
+      ]
+    },
+    "n_1_0": {
+      "id": "n_1_0",
+      "sectionId": "s2",
+      "text": "You decide to buy ten pieces of your favorite anime snack. The clerk is helping other customers, so you wait.",
+      "choices": [
+        {
+          "id": "n_1_0_c0",
+          "label": "Order the snack",
+          "writeIn": {
+            "prompt": "Write a sentence ordering ten pieces of your favorite snack in English.",
+            "expectedTargets": 2
+          },
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_1_1",
+            "points": 2
+          }
+        },
+        {
+          "id": "n_1_0_c1",
+          "label": "Wait for the clerk",
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_1_1",
+            "points": 2
+          }
+        }
+      ]
+    },
+    "n_1_1": {
+      "id": "n_1_1",
+      "sectionId": "s2",
+      "text": "The clerk finally comes to you. You show them your money and thank the clerk.",
+      "choices": [
+        {
+          "id": "n_1_1_c0",
+          "label": "Pay with two hundred yen",
+          "writeIn": {
+            "prompt": "Write a sentence thanking the clerk in English.",
+            "expectedTargets": 1
+          },
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_end",
+            "points": 2
+          }
+        },
+        {
+          "id": "n_1_1_c1",
+          "label": "Pay with five hundred yen",
+          "onSuccess": {
+            "text": "",
+            "nextNodeId": "n_end",
+            "points": 2
+          }
+        }
+      ]
+    },
+    "n_end": {
+      "id": "n_end",
+      "sectionId": "s2",
+      "isEnding": true,
+      "endingSummary": "After buying the items you wanted, you thank the clerk and head out with your new snacks!",
+      "text": "The adventure comes to a close."
+    }
+  }
+}

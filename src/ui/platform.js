@@ -22,6 +22,14 @@ export async function loadCampaign(id) {
   return res.json();
 }
 
+export async function generateCampaign(brief) {
+  if (g) return g.generateCampaign(brief);
+  // browser preview has no model access: show a previously generated sample
+  const res = await fetch("/campaigns/generated-test.json");
+  if (!res.ok) throw new Error("No generated sample in browser preview (run the desktop app for live generation).");
+  return { campaign: await res.json(), validation: { ok: true, errors: [] }, browserSample: true };
+}
+
 export async function saveCampaign(campaign) {
   if (g) return g.saveCampaign(campaign);
   // browser fallback: download as a file

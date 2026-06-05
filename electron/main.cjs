@@ -6,6 +6,7 @@
 const { app, BrowserWindow, protocol, ipcMain } = require("electron");
 const fsp = require("node:fs/promises");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 
 const isDev = !app.isPackaged;
 const APP_ROOT = isDev ? path.join(__dirname, "..") : app.getAppPath();
@@ -87,6 +88,25 @@ function registerIpc() {
   ipcMain.handle("settings:set", async (_e, s) => {
     await fsp.writeFile(SETTINGS_FILE, JSON.stringify(s, null, 2), "utf8");
     return s;
+  });
+
+  // Live campaign generation via the user's Ollama (qwen2.5:7b behind Caddy).
+  ipcMain.handle("ai:generate", async (_e, brief) => {
+    let settings = {};
+    try {
+      settings = JSON.parse(await fsp.readFile(SETTINGS_FILE, "utf8"));
+    } catch {}
+    const password = settings.ollamaPassword || process.env.GARRAK_OLLAMA_PASSWORD;
+    const baseUrl = settings.ollamaUrl || "https://10.0.0.54:11435";
+    const model = settings.ollamaModel || "qwen2.5:7b";
+    if (!password) throw new Error("No AI password set. Open Teacher Studio settings and save your connection first.");
+    const ai = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "ai.js")).href);
+    const comp = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "compile.js")).href);
+    const schema = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "schema.js")).href);
+    const client = ai.makeClient({ baseUrl, model, password });
+    const spec = await ai.generateStorySpec(client, brief);
+    const campaign = comp.compileCampaign(spec, { brief });
+    return { campaign, validation: schema.validateCampaign(campaign) };
   });
 }
 

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Garak :: Game — Teacher Studio</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <div class="title">GARAK<span class="dim">::</span>STUDIO <span class="brand">a Wrench &amp; Ram joint</span></div>
+        <a class="modelink" href="./index.html">▶ Back to Play</a>
+      </header>
+
+      <main id="main">
+        <aside id="left">
+          <div class="panel">
+            <h3>AI Connection</h3>
+            <label class="fld">Server URL<input id="set-url" type="text" /></label>
+            <label class="fld">Model<input id="set-model" type="text" /></label>
+            <label class="fld">Password<input id="set-pass" type="password" /></label>
+            <button id="save-conn">Save connection</button>
+            <div id="env-note" class="dim small"></div>
+          </div>
+        </aside>
+
+        <section id="center">
+          <h2 class="studio-h">Generate a campaign</h2>
+          <div class="studio-form">
+            <label class="fld">Campaign idea
+              <textarea id="b-idea" rows="3" placeholder="e.g. A trip to a convenience store to buy lunch and ask the clerk for help"></textarea>
+            </label>
+            <div class="row">
+              <label class="fld">CEFR level
+                <select id="b-level">
+                  <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+                </select>
+              </label>
+              <label class="fld">Length
+                <select id="b-length">
+                  <option value="one-shot (~25 min)">One-shot (~25 min)</option>
+                  <option value="short arc (2-3 sessions)">Short arc (2-3 sessions)</option>
+                </select>
+              </label>
+            </div>
+            <label class="fld">Target language (grammar / vocabulary)
+              <input id="b-target" type="text" placeholder="e.g. greetings, 'I would like', numbers, 'how much is...'" />
+            </label>
+            <label class="fld">Student interests
+              <input id="b-interests" type="text" placeholder="e.g. anime, soccer, music" />
+            </label>
+            <button id="gen-btn" class="primary">✦ Generate campaign</button>
+            <div id="gen-status" class="dim"></div>
+          </div>
+
+          <div id="result" class="result" style="display: none">
+            <div id="result-head"></div>
+            <div class="dim small">Review &amp; edit the campaign JSON, then play-test or save:</div>
+            <textarea id="json-edit" rows="16" spellcheck="false"></textarea>
+            <div class="row">
+              <button id="btn-validate">Validate</button>
+              <button id="btn-playtest">▶ Play-test</button>
+              <button id="btn-save" class="primary">Save to library</button>
+            </div>
+            <div id="validation" class="validation"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./studio.js"></script>
+  </body>
+</html>

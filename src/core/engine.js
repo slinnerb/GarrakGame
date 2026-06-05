@@ -1,4 +1,4 @@
-// GarrakGame core engine - pure logic, no UI, no Electron, no network.
+// Garak :: Game (Wrench & Ram) — core engine. Pure logic, no UI, no Electron, no network.
 // The UI (and later a remote client) drive this through these functions and
 // render whatever view() returns. Keeping it pure is what lets a future
 // invite-code client run the exact same game.

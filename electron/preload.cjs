@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld("garrak", {
   saveCampaign: (campaign) => ipcRenderer.invoke("campaigns:save", campaign),
   getSettings: () => ipcRenderer.invoke("settings:get"),
   setSettings: (settings) => ipcRenderer.invoke("settings:set", settings),
+  generateCampaign: (brief) => ipcRenderer.invoke("ai:generate", brief),
 });

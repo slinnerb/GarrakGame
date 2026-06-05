@@ -19,6 +19,16 @@ let campaign = null;
 let session = null;
 
 async function boot() {
+  // Studio "Play-test" stashes a campaign to run; prefer it once.
+  const stash = sessionStorage.getItem("garrak.playtest");
+  if (stash) {
+    sessionStorage.removeItem("garrak.playtest");
+    try {
+      campaign = JSON.parse(stash);
+      newSession();
+      return;
+    } catch {}
+  }
   campaign = await loadDefaultCampaign();
   newSession();
 }

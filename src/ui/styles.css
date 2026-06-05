@@ -32,7 +32,10 @@ html, body {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel);
 }
-.title { letter-spacing: 2px; color: var(--amber); font-weight: bold; }
+.title { letter-spacing: 2px; color: var(--amber); font-weight: bold; white-space: nowrap; display: flex; align-items: baseline; gap: 10px; }
+.title .brand { color: var(--ink-dim); font-size: 11px; letter-spacing: 1px; font-weight: normal; white-space: nowrap; }
+#topbar { gap: 16px; flex-wrap: wrap; }
+.hud { flex: 1; min-width: 0; }
 .hud { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px; }
 .hud b { color: var(--amber); }
 
@@ -88,3 +91,25 @@ textarea:focus { outline: none; border-color: var(--accent); }
 }
 #bottombar select, #bottombar input { font-family: var(--mono); }
 .spacer { flex: 1; }
+
+/* Teacher Studio */
+.modelink { color: var(--amber); text-decoration: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; font-size: 13px; }
+.modelink:hover { border-color: var(--accent); color: #fff; }
+.studio-h { color: var(--amber); margin: 0 0 14px; }
+.studio-form { display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+.fld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink-dim); }
+.fld input, .fld select, .fld textarea {
+  font-family: var(--mono); font-size: 14px; background: #0a0d08; color: var(--ink);
+  border: 1px solid var(--border); border-radius: 4px; padding: 8px;
+}
+.fld input:focus, .fld select:focus, .fld textarea:focus { outline: none; border-color: var(--accent); }
+.fld input[type="password"] { letter-spacing: 2px; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+button.primary { background: #1f3315; border-color: var(--accent); color: #eafbe0; }
+.result { margin-top: 22px; border-top: 1px dashed var(--border); padding-top: 16px; max-width: 840px; }
+.result h3 { color: var(--amber); margin: 0 0 4px; }
+.outline { margin: 8px 0 14px; padding-left: 18px; }
+#json-edit { width: 100%; background: #0a0d08; color: var(--ink); border: 1px solid var(--border); border-radius: 4px; font-family: var(--mono); font-size: 12px; padding: 10px; }
+.validation { margin-top: 10px; }
+.validation .bad { color: var(--danger); }
+.validation ul { color: var(--danger); margin: 4px 0; padding-left: 18px; }
