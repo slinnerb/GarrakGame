@@ -4,6 +4,7 @@ out/
 build/
 smoke.png
 .lastgen.json
+.grader-rules.local.txt
 src/ui/buildinfo.json
 *.local
 secret.local.txt

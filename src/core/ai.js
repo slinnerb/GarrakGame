@@ -134,7 +134,14 @@ export async function aiGrade(client, text, bank, opts = {}) {
 - The student is LEARNING ENGLISH. The whole answer should be in English.
 - The target-language items below are the ENGLISH words/phrases the student is practicing. The Japanese hint after each is just a translation reference for the student; the student MUST NOT use Japanese in their answer.
 - All your "mistakes" notes must be about THEIR ENGLISH (grammar, spelling, word choice, missing punctuation, capital letters, missing words). NEVER suggest they use Japanese instead.
-- Be strict about spelling and basic grammar even at A1. Be kind, but honest. Return ONLY JSON.`;
+- Be strict about spelling and basic grammar even at A1. Be kind, but honest. Return ONLY JSON.
+
+ESL/EFL Punctuation Guidelines (apply these):
+- The Oxford comma (the comma before "and" in a list of three or more items) is OPTIONAL. Both styles are correct English. Do NOT flag its presence or its absence. Do NOT deduct points for it either way.
+- Do NOT flag stylistic comma placement (missing comma after a short introductory phrase, missing comma in a short compound sentence, etc.). Comma style varies between writers and style guides.
+- DO flag a comma splice: two complete independent clauses joined with only a comma and no conjunction. Example: "I went to the store, I bought bread." Suggest a period, semicolon, or coordinating conjunction (and, but, so, etc.) as the fix.
+- DO flag missing terminal punctuation (no period, question mark, or exclamation point at the end of a sentence).
+${opts.extraRules ? `\nAdditional rules from the teacher:\n${opts.extraRules}` : ""}`;
 
   const user = `Student CEFR level: ${cefr}.
 

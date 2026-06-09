@@ -130,7 +130,9 @@ function registerIpc() {
     if (!password) throw new Error("No AI password set.");
     const ai = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "ai.js")).href);
     const client = ai.makeClient({ baseUrl, model, password });
-    return ai.aiGrade(client, text, bank, opts);
+    // Inject the teacher's custom grader rules into every grade call.
+    const enrichedOpts = { ...opts, extraRules: settings.graderRules || "" };
+    return ai.aiGrade(client, text, bank, enrichedOpts);
   });
 
   // Per-campaign save state (resume mid-session).

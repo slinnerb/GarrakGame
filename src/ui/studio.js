@@ -20,6 +20,18 @@ async function loadSettings() {
   $("set-url").value = s.ollamaUrl || "https://10.0.0.54:11435";
   $("set-model").value = s.ollamaModel || "qwen2.5:7b";
   $("set-pass").value = s.ollamaPassword || "";
+  $("set-grader-rules").value = s.graderRules || "";
+  // In browser-preview mode the rules live on the dev server (so the proxy can
+  // inject them); fetch the current value when we're in browser mode.
+  if (!inElectron) {
+    try {
+      const r = await fetch("/api/grader-rules");
+      if (r.ok) {
+        const data = await r.json();
+        if (data.rules) $("set-grader-rules").value = data.rules;
+      }
+    } catch {}
+  }
   $("env-note").textContent = inElectron
     ? "Desktop app — settings save automatically (per-user)."
     : "Browser preview — using local secret.local.txt for the password.";
@@ -33,6 +45,7 @@ async function saveConn(immediate) {
       ollamaUrl: $("set-url").value.trim(),
       ollamaModel: $("set-model").value.trim(),
       ollamaPassword: $("set-pass").value,
+      graderRules: $("set-grader-rules").value,
     });
     $("save-state").textContent = "saved ✓";
     setTimeout(() => ($("save-state").textContent = ""), 1500);
@@ -40,6 +53,32 @@ async function saveConn(immediate) {
   if (immediate) return doSave();
   $("save-state").textContent = "saving…";
   saveTimer = setTimeout(doSave, 400);
+}
+
+let rulesSaveTimer = null;
+function saveGraderRules() {
+  clearTimeout(rulesSaveTimer);
+  $("rules-state").textContent = "saving…";
+  rulesSaveTimer = setTimeout(async () => {
+    await setSettings({
+      ollamaUrl: $("set-url").value.trim(),
+      ollamaModel: $("set-model").value.trim(),
+      ollamaPassword: $("set-pass").value,
+      graderRules: $("set-grader-rules").value,
+    });
+    // Also push to dev server in browser preview so the /api/grade proxy reads them
+    if (!inElectron) {
+      try {
+        await fetch("/api/grader-rules", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rules: $("set-grader-rules").value }),
+        });
+      } catch {}
+    }
+    $("rules-state").textContent = "saved ✓";
+    setTimeout(() => ($("rules-state").textContent = ""), 1500);
+  }, 500);
 }
 
 async function checkConn() {
@@ -447,6 +486,7 @@ $("test-conn").onclick = checkConn;
 ["set-url", "set-model", "set-pass"].forEach((id) => {
   $(id).addEventListener("input", () => saveConn(false));
 });
+$("set-grader-rules").addEventListener("input", saveGraderRules);
 (async () => {
   await loadSettings();
   await checkConn();

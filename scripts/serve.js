@@ -30,6 +30,14 @@ async function readSecret() {
   }
 }
 
+async function readGraderRules() {
+  try {
+    return (await readFile(join(ROOT, ".grader-rules.local.txt"), "utf8")).trim();
+  } catch {
+    return "";
+  }
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -81,11 +89,31 @@ createServer(async (req, res) => {
       const { ai } = await loadAi();
       try {
         const client = ai.makeClient({ baseUrl: DEFAULT_URL, model: DEFAULT_MODEL, password });
-        const grade = await ai.aiGrade(client, body.text, body.bank, body.opts);
+        const extraRules = await readGraderRules();
+        const opts = { ...(body.opts || {}), extraRules };
+        const grade = await ai.aiGrade(client, body.text, body.bank, opts);
         return sendJson(res, 200, grade);
       } catch (e) {
         return sendJson(res, 500, { error: e.message });
       }
+    }
+
+    if (req.method === "GET" && req.url === "/api/grader-rules") {
+      // Dev proxy: in browser preview, the rules live on the dev server side
+      // (not in the browser). Return whatever is stashed in /tmp/grader-rules.txt
+      // or empty. The Studio Settings panel saves them back here.
+      try {
+        const t = (await readFile(join(ROOT, ".grader-rules.local.txt"), "utf8")).trim();
+        return sendJson(res, 200, { rules: t });
+      } catch {
+        return sendJson(res, 200, { rules: "" });
+      }
+    }
+    if (req.method === "POST" && req.url === "/api/grader-rules") {
+      const body = JSON.parse(await readBody(req));
+      const { writeFile } = await import("node:fs/promises");
+      await writeFile(join(ROOT, ".grader-rules.local.txt"), String(body.rules || ""), "utf8");
+      return sendJson(res, 200, { ok: true });
     }
 
     if (req.method === "POST" && req.url === "/api/generate") {
