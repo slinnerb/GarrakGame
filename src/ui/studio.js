@@ -1,7 +1,7 @@
 // Teacher Studio: brief -> generate (real qwen2.5 in the desktop app) ->
 // review/edit JSON -> play-test or save. Generation + file I/O go through the
 // platform adapter; campaign validation runs right here in the renderer.
-import { generateCampaign, saveCampaign, getSettings, setSettings, pingAi, getBuildInfo, inElectron } from "./platform.js";
+import { generateCampaign, saveCampaign, getSettings, setSettings, pingAi, getBuildInfo, getSettingsLocation, inElectron } from "./platform.js";
 
 (async () => {
   const b = await getBuildInfo();
@@ -17,10 +17,20 @@ const $ = (id) => document.getElementById(id);
 
 async function loadSettings() {
   const s = await getSettings();
-  $("set-url").value = s.ollamaUrl || "https://10.0.0.54:11435";
-  $("set-model").value = s.ollamaModel || "qwen2.5:7b";
-  $("set-pass").value = s.ollamaPassword || "";
+  // Only OVERRIDE the HTML defaults if there's an actually-saved value. This
+  // way a fresh install (no settings.json yet) still shows the defaults that
+  // the HTML pre-set, and a returning user sees their saved values.
+  if (s.ollamaUrl) $("set-url").value = s.ollamaUrl;
+  if (s.ollamaModel) $("set-model").value = s.ollamaModel;
+  if (s.ollamaPassword) $("set-pass").value = s.ollamaPassword;
   $("set-grader-rules").value = s.graderRules || "";
+  // Show where settings live so users can verify they're persisting + back them up
+  try {
+    const loc = await getSettingsLocation();
+    if (loc?.path) {
+      $("settings-location").innerHTML = `Settings ${loc.exists ? "saved at" : "(will save to)"}: <code>${esc(loc.path)}</code>`;
+    }
+  } catch {}
   // In browser-preview mode the rules live on the dev server (so the proxy can
   // inject them); fetch the current value when we're in browser mode.
   if (!inElectron) {
@@ -487,6 +497,40 @@ $("test-conn").onclick = checkConn;
   $(id).addEventListener("input", () => saveConn(false));
 });
 $("set-grader-rules").addEventListener("input", saveGraderRules);
+
+// Export settings to a downloadable JSON file (good for backups and for
+// sharing a known-good config with someone like Garak).
+$("settings-export").onclick = async () => {
+  const s = await getSettings();
+  const blob = new Blob([JSON.stringify(s, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.download = `garak-game-settings-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+// Import settings from a JSON file (drop in a previously-exported file or one
+// shared with you and the app picks up URL / model / password / rules).
+$("settings-import").onclick = () => $("settings-file-input").click();
+$("settings-file-input").onchange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const s = JSON.parse(text);
+    await setSettings(s);
+    await loadSettings();
+    await checkConn();
+    $("save-state").textContent = "imported ✓";
+    setTimeout(() => ($("save-state").textContent = ""), 2000);
+  } catch (err) {
+    $("save-state").textContent = "✗ " + err.message;
+  } finally {
+    e.target.value = "";
+  }
+};
 (async () => {
   await loadSettings();
   await checkConn();

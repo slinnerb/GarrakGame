@@ -99,6 +99,7 @@ function registerIpc() {
     await fsp.writeFile(SETTINGS_FILE, JSON.stringify(s, null, 2), "utf8");
     return s;
   });
+  ipcMain.handle("settings:locate", async () => ({ path: SETTINGS_FILE, userData: USER_DIR, exists: !!(await fsp.stat(SETTINGS_FILE).catch(() => null)) }));
 
   // Live campaign generation via the user's Ollama (qwen2.5:7b behind Caddy).
   ipcMain.handle("ai:generate", async (_e, brief) => {

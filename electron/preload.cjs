@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("garrak", {
     ipcRenderer.on("updater:state", handler);
     return () => ipcRenderer.removeListener("updater:state", handler);
   },
+  getSettingsLocation: () => ipcRenderer.invoke("settings:locate"),
   getSaveState: (campaignId) => ipcRenderer.invoke("save:get", campaignId),
   setSaveState: (payload) => ipcRenderer.invoke("save:set", payload),
   clearSaveState: (campaignId) => ipcRenderer.invoke("save:clear", campaignId),

@@ -130,3 +130,8 @@ export async function setSettings(s) {
   localStorage.setItem("garrak.settings", JSON.stringify(s));
   return s;
 }
+
+export async function getSettingsLocation() {
+  if (g && g.getSettingsLocation) return g.getSettingsLocation();
+  return { path: "localStorage (browser preview)", userData: "(N/A in browser)", exists: !!localStorage.getItem("garrak.settings") };
+}

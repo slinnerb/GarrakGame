@@ -23,13 +23,19 @@
           <div class="panel">
             <h3>AI Connection</h3>
             <div id="conn-badge" class="conn-badge"><span class="dot dim"></span><span id="conn-text">checking…</span></div>
-            <label class="fld">Server URL<input id="set-url" type="text" /></label>
-            <label class="fld">Model<input id="set-model" type="text" /></label>
-            <label class="fld">Password<input id="set-pass" type="password" autocomplete="off" /></label>
+            <label class="fld">Server URL<input id="set-url" type="text" value="https://10.0.0.54:11435" placeholder="https://10.0.0.54:11435" /></label>
+            <label class="fld">Model<input id="set-model" type="text" value="qwen2.5:7b" placeholder="qwen2.5:7b" /></label>
+            <label class="fld">Password<input id="set-pass" type="password" autocomplete="off" placeholder="Your AI API key" /></label>
             <div class="row">
               <button id="test-conn">Test connection</button>
               <span id="save-state" class="dim small"></span>
             </div>
+            <div class="row" style="gap: 6px; margin-top: 6px;">
+              <button id="settings-export" type="button" title="Save your settings to a file you can back up or send">⇩ Export</button>
+              <button id="settings-import" type="button" title="Load settings from a previously exported file">⇧ Import</button>
+              <input type="file" id="settings-file-input" accept="application/json,.json" style="display: none" />
+            </div>
+            <div id="settings-location" class="dim small" style="margin-top: 6px; word-break: break-all;"></div>
             <div id="env-note" class="dim small"></div>
           </div>
 
