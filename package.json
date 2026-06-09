@@ -1,6 +1,6 @@
 {
   "name": "garak-game",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "type": "module",
   "description": "Garak :: Game — an English-teaching choose-a-path text RPG, a Wrench and Ram project",
