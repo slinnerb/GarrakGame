@@ -93,9 +93,19 @@ function saveGraderRules() {
 
 async function checkConn() {
   setConnBadge("dim", "checking…");
-  const r = await pingAi();
-  if (r.ok) setConnBadge("ok", `Connected — ${r.model || "AI"}`);
-  else setConnBadge("bad", r.error || "Not connected");
+  // Outer guard: even if pingAi never resolves, this Promise.race always wins
+  // within 12 seconds and the badge updates to a clear error. Belt + suspenders
+  // on top of the 8s in-protocol timeout already in ai.js.
+  try {
+    const r = await Promise.race([
+      pingAi(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Server not reachable (timeout)")), 12000)),
+    ]);
+    if (r.ok) setConnBadge("ok", `Connected — ${r.model || "AI"}`);
+    else setConnBadge("bad", r.error || "Not connected");
+  } catch (e) {
+    setConnBadge("bad", e.message || "Connection failed");
+  }
 }
 
 function setConnBadge(cls, text) {
@@ -488,9 +498,9 @@ function esc(s) {
 
 
 $("gen-btn").onclick = onGenerate;
-$("btn-validate").onclick = onValidate;
-$("btn-playtest").onclick = onPlaytest;
-$("btn-save").onclick = onSave;
+// Note: btn-validate / btn-playtest / btn-save are created dynamically by
+// renderResult() once a campaign has been generated/loaded — they don't exist
+// at module-load time and renderResult() wires them up directly.
 $("test-conn").onclick = checkConn;
 // auto-save settings on any change (debounced) so the user never has to click "Save"
 ["set-url", "set-model", "set-pass"].forEach((id) => {

@@ -4,7 +4,7 @@
 import https from "node:https";
 import http from "node:http";
 
-function postJson(urlStr, headers, bodyObj, insecure) {
+function postJson(urlStr, headers, bodyObj, insecure, timeoutMs) {
   return new Promise((resolve, reject) => {
     const u = new URL(urlStr);
     const lib = u.protocol === "https:" ? https : http;
@@ -17,6 +17,7 @@ function postJson(urlStr, headers, bodyObj, insecure) {
         method: "POST",
         headers: { ...headers, "Content-Length": body.length },
         rejectUnauthorized: !insecure,
+        timeout: timeoutMs,
       },
       (res) => {
         let data = "";
@@ -30,6 +31,10 @@ function postJson(urlStr, headers, bodyObj, insecure) {
       }
     );
     req.on("error", reject);
+    // Without this, a request to a hung server waits forever and a stuck
+    // "checking..." indicator never resolves. Destroying the socket triggers
+    // the error handler with a clear message.
+    req.on("timeout", () => req.destroy(new Error(`request timed out after ${timeoutMs}ms`)));
     req.write(body);
     req.end();
   });
@@ -40,8 +45,10 @@ export function makeClient({ baseUrl, model, password, insecureTLS = true }) {
   const headers = { "Content-Type": "application/json" };
   if (password) headers.Authorization = `Bearer ${password}`;
   const insecure = url.startsWith("https:") && insecureTLS;
-  async function chat(messages, { format = "json", temperature = 0.6 } = {}) {
-    const raw = await postJson(`${url}/api/chat`, headers, { model, messages, stream: false, format, options: { temperature } }, insecure);
+  async function chat(messages, { format = "json", temperature = 0.6, timeoutMs = 180000, numPredict } = {}) {
+    const options = { temperature };
+    if (numPredict != null) options.num_predict = numPredict;
+    const raw = await postJson(`${url}/api/chat`, headers, { model, messages, stream: false, format, options }, insecure, timeoutMs);
     const data = JSON.parse(raw);
     return data.message?.content ?? "";
   }

@@ -185,7 +185,8 @@ function registerIpc() {
     try {
       const ai = await import(pathToFileURL(path.join(APP_ROOT, "src", "core", "ai.js")).href);
       const client = ai.makeClient({ baseUrl, model, password });
-      await client.chat([{ role: "user", content: "ping" }], { format: undefined, temperature: 0 });
+      // Short ping: 8s timeout, only 5 tokens of output. Fast even if model is warm-loading.
+      await client.chat([{ role: "user", content: "ping" }], { format: undefined, temperature: 0, timeoutMs: 8000, numPredict: 5 });
       return { ok: true, model, url: baseUrl };
     } catch (e) {
       return { ok: false, error: e.message };

@@ -73,9 +73,7 @@ createServer(async (req, res) => {
       const { ai } = await loadAi();
       try {
         const client = ai.makeClient({ baseUrl: DEFAULT_URL, model: DEFAULT_MODEL, password });
-        // ping with a tiny call; the Ollama generate endpoint with a one-token
-        // budget returns fast and confirms auth + the model is loaded.
-        await client.chat([{ role: "user", content: "ping" }], { format: undefined, temperature: 0 });
+        await client.chat([{ role: "user", content: "ping" }], { format: undefined, temperature: 0, timeoutMs: 8000, numPredict: 5 });
         return sendJson(res, 200, { ok: true, model: DEFAULT_MODEL, url: DEFAULT_URL });
       } catch (e) {
         return sendJson(res, 200, { ok: false, error: e.message });
